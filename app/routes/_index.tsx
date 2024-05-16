@@ -1,5 +1,5 @@
 import { Image } from "@nextui-org/react";
-import type { MetaFunction } from "@remix-run/node";
+import type { LoaderFunction, MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import LandingForm from "~/components/LandingForm";
 
@@ -8,6 +8,11 @@ export const meta: MetaFunction = () => {
     { title: "New Remix App" },
     { name: "description", content: "Welcome to Remix!" },
   ];
+};
+
+export const loader: LoaderFunction = () => {
+  console.log("hello");
+  return {};
 };
 
 export default function Index() {

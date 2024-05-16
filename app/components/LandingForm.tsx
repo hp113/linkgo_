@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useSearchParams } from "@remix-run/react";
 import { FaArrowUp } from "react-icons/fa6";
 
 export default function LandingForm() {
-  const [username, setUsername] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const username = searchParams.get("username") ?? "";
 
   return (
     <div className="w-fit h-fit z-10" id="container">
@@ -18,20 +19,21 @@ export default function LandingForm() {
           <div
             className={`flex items-center rounded-l-xl bg-white px-6 text-sm md:text-2xl sm:text-md $`}
           >
-            <label className="opacity-40 font-semibold">mylinktr.ee/:</label>
             <input
               type="text"
               className="bg-transparent peer py-5 px-2 outline-none border-none md:w-auto w-[8rem]"
-              placeholder="fabiconcept"
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder=""
+              value={username}
+              onChange={(e) => setSearchParams({ username: e.target.value })}
               required
             />
+            <label className="opacity-40 font-semibold">.link.go</label>
           </div>
           <button
             type="submit"
-            className={`px-4 grid place-items-center  rounded-r-xl font-semibold cursor-pointer hover:scale-110 active:scale-95 active:opacity-80 uppercase text-sm md:text-lg sm:text-md`}
+            className={`px-4 grid place-items-center bg-gray-600  rounded-r-xl font-semibold cursor-pointer hover:scale-110 active:scale-95 active:opacity-80 uppercase text-sm md:text-lg sm:text-md`}
           >
-            <span className="nopointer">
+            <span className="nopointer ">
               <FaArrowUp />
             </span>
           </button>
