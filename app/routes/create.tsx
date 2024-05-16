@@ -1,4 +1,7 @@
+import { Button, RadioGroup } from "@nextui-org/react";
 import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form } from "@remix-run/react";
+import { CustomRadio } from "~/components/CustomRadio";
 import { createSupabaseServerClient } from "../supabase.server";
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
@@ -22,5 +25,35 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 export default function Create() {
-  return <></>;
+  return (
+    <div className="flex flex-[0.8] h-screen w-screen">
+      <div className="flex-1">,</div>
+      <Form>
+        <h1 className="text-2xl font-bold">
+          What is the type of your buisness?
+        </h1>
+        <p className="text-gray-800">
+          This will help us tailor your page according to your needs.
+        </p>
+
+        <RadioGroup>
+          <CustomRadio
+            description="For cafes, restaurants, boutiques etc that have a physical location"
+            value="free"
+          >
+            Physical store
+          </CustomRadio>
+          <CustomRadio
+            description="For any business that runs completely online."
+            value="pro"
+          >
+            Digital Business
+          </CustomRadio>
+        </RadioGroup>
+        <Button variant="solid" color="primary">
+          Next
+        </Button>
+      </Form>
+    </div>
+  );
 }
