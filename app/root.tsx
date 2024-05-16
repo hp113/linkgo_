@@ -24,6 +24,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const env = {
     SUPABASE_URL: process.env.SUPABASE_URL!,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY!,
+    BASE_URL: process.env.VERCEL_URL ?? "http://localhost:5173",
   };
 
   const supabase = createSupabaseServerClient(request);
@@ -44,6 +45,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const data = useLoaderData<typeof loader>();
   return (
     <html lang="en">
       <head>
@@ -55,6 +57,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <body>
         <NextUIProvider>{children}</NextUIProvider>
         <ScrollRestoration />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.process = ${JSON.stringify({
+              env: { BASE_URL: data.env.BASE_URL },
+            })}`,
+          }}
+        />
         <Scripts />
       </body>
     </html>
