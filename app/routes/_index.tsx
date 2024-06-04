@@ -7,6 +7,7 @@ import type {
 import {
   Link,
   useLoaderData,
+  useNavigate,
   useNavigation,
   useOutletContext,
   useSearchParams,
@@ -42,7 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     .single();
 
   let status = AvailableStatus.IDLE;
-  const query = new URL(request.url).searchParams.get("q") ?? "";
+  const query = new URL(request.url).searchParams.get("store_name") ?? "";
   if (query.trim().length < 4) return { status, user };
   const { count } = await supabaseClient
     .from("urls")
@@ -63,25 +64,36 @@ export default function Index() {
     supabase: SupabaseClient<Database>;
   }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get("q") ?? "");
+  const [query, setQuery] = useState(searchParams.get("store_name") ?? "");
   const { state } = useNavigation();
+  const navigate = useNavigate();
   const debounced = useDebouncedCallback(
     // function
     (value) => {
-      setSearchParams({ q: value });
+      setSearchParams({ store_name: value });
     },
     // delay in ms
     500
   );
-  const handleSignIn = async (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${process.env.BASE_URL}/auth/callback`,
-      },
-    });
-    if (error) console.log(error);
+    const searchParams = window.location.search;
+    if (!user) {
+      console.log(encodeURI("/create" + searchParams.toString()));
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: `${
+            process.env.BASE_URL
+          }/auth/callback?redirect=${encodeURI(
+            btoa("/create?" + searchParams)
+          )}`,
+        },
+      });
+      if (error) console.log(error);
+    } else {
+      return navigate("/create" + searchParams);
+    }
   };
 
   const { status, user } = useLoaderData<typeof loader>();
@@ -117,7 +129,7 @@ export default function Index() {
       <div className="w-fit h-fit z-10" id="container">
         <form
           className="flex items-center justify-center flex-col"
-          onSubmit={!user ? handleSignIn : undefined}
+          onSubmit={handleSubmit}
           id="inner"
         >
           <div className="text-[2.15rem] sm:text-[3rem] md:text-[4rem] font-bold text-white z-10 mb-4 max-w-[70vw] text-center">
@@ -149,6 +161,7 @@ export default function Index() {
                 defaultValue={query}
                 onChange={(e) => debounced(e.target.value)}
                 required
+                name="store_name"
               />
               <label className="opacity-40 font-semibold">.link.go</label>
             </div>

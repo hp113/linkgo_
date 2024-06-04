@@ -5,13 +5,13 @@ import { createSupabaseServerClient } from "~/supabase.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { supabaseClient, headers } = createSupabaseServerClient(request);
-
+  const { redirectParam } = await request.json();
   const { data, error } = await supabaseClient.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: `${
         process.env.VERCEL_URL ?? "http://localhost:5173"
-      }/auth/callback`,
+      }/auth/callback?redirect=${encodeURI(redirectParam)}`,
     },
   });
 

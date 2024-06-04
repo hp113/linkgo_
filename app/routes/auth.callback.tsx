@@ -11,8 +11,13 @@ export const loader = async ({ request }: ActionFunctionArgs) => {
     if (error) {
       return redirect("/sign-in");
     }
-
-    return redirect("/dashboard", {
+    const redirectUrl = url.searchParams.get("redirect");
+    if (redirectUrl) {
+      return redirect(atob(redirectUrl), {
+        headers: headers,
+      });
+    }
+    return redirect("/", {
       headers: headers,
     });
   }
