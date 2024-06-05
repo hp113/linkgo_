@@ -53,8 +53,8 @@ export default function Create() {
     <div className="flex flex-[0.8] h-screen w-screen">
       {JSON.stringify(actionData)}
       <div className="flex-1">{searchParams.get("store_name")}</div>
-      <Form method="post">
-        <h1 className="text-2xl font-bold">
+      <Form method="post" className="w-full flex flex-col m-2">
+        <h1 className="text-2xl font-bold mx-auto">
           What is the type of your buisness?
         </h1>
         <p className="text-gray-800">
@@ -65,7 +65,7 @@ export default function Create() {
           value={searchParams.get("store_name") ?? ""}
           name="url"
         />
-        <RadioGroup name="type">
+        <RadioGroup name="type" className="mx-auto my-3">
           <CustomRadio
             description="For cafes, restaurants, boutiques etc that have a physical location"
             value="free"
@@ -79,7 +79,7 @@ export default function Create() {
             Digital Business
           </CustomRadio>
         </RadioGroup>
-        <Button variant="solid" color="primary" type="submit">
+        <Button variant="solid" color="primary" type="submit" className="mx-auto">
           Next
         </Button>
       </Form>
