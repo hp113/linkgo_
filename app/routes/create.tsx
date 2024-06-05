@@ -27,6 +27,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (error) {
     return json({ message: error.message }, 400);
   }
+  
   return redirect(redirectUrl);
 };
 
@@ -57,7 +58,7 @@ export default function Create() {
         <h1 className="text-2xl font-bold mx-auto">
           What is the type of your buisness?
         </h1>
-        <p className="text-gray-800">
+        <p className="text-gray-800 sm:mx-auto">
           This will help us tailor your page according to your needs.
         </p>
         <input
