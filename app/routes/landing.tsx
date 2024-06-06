@@ -23,7 +23,7 @@ export default function LandingPage() {
     <div className="flex w-full flex-col items-center">
       <Navbar>
         <NavbarBrand>
-          <p className="font-bold text-inherit">link.go</p>
+          <p className="font-bold text-inherit sm:text-xl">link.go</p>
         </NavbarBrand>
         <NavbarContent justify="end">
           <NavbarItem>
