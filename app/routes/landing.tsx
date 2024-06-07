@@ -6,6 +6,7 @@ import {
   NavbarBrand,
   NavbarContent,
   NavbarItem,
+  Snippet,
   Tab,
   Tabs,
 } from "@nextui-org/react";
@@ -14,16 +15,18 @@ import { Link, Outlet } from "@remix-run/react";
 import React from "react";
 import { BiSolidPhotoAlbum } from "react-icons/bi";
 import { BsMusicNoteBeamed } from "react-icons/bs";
+import { HiOutlineGlobeAlt } from "react-icons/hi";
 import { MdAlbum } from "react-icons/md";
 import { RxVideo } from "react-icons/rx";
+import { TbBrandGoogleAnalytics } from "react-icons/tb";
 
 
 export default function LandingPage() {
   return (
-    <div className="flex w-full flex-col items-center">
+    <div className="flex w-full flex-col sm:items-center">
       <Navbar>
         <NavbarBrand>
-          <p className="font-bold text-inherit sm:text-xl">link.go</p>
+          <p className="font-bold text-inherit sm:text-xl justify-start">link.go</p>
         </NavbarBrand>
         <NavbarContent justify="end">
           <NavbarItem>
@@ -31,16 +34,22 @@ export default function LandingPage() {
           </NavbarItem>
         </NavbarContent>
       </Navbar>
-      <Tabs aria-label="Options" color="primary" variant="underlined">
+      <div className="w-full px-6 sm:w-fit">
+
+      <h1 className="font-bold">Hi Vima!!!</h1>
+
+      <p>Your link.go URL</p>
+      <Snippet symbol=""  variant={undefined}>npm install @nextui-org/react</Snippet>
+      </div>
+      <Tabs aria-label="Options" color="default" variant="underlined" className="px-3 my-2">
         <Tab
           key="photos"
           title={
-            <Link to="photos">
-                <div className="flex items-center space-x-2">
-                <BiSolidPhotoAlbum />
+            <Link to="details" className="flex flex-col items-center">
+                <HiOutlineGlobeAlt />
 
-                <span>Photos</span>
-                </div>
+
+                <span className="mb-2">Details</span>
 
             </Link>
           }
@@ -48,38 +57,14 @@ export default function LandingPage() {
         <Tab
           key="music"
           title={
-            <Link to="music">
-                <div className="flex items-center space-x-2">
-                <BsMusicNoteBeamed />
+            <Link to="analytics" className="flex flex-col items-center">
+                <TbBrandGoogleAnalytics />
+                <span className="mb-2">Analytics</span>
 
-                <span>Music</span>
-                </div>
             </Link>
           }
         />
-        <Tab
-          key="videos"
-          title={
-            <Link to="videos">
-                <div className="flex items-center space-x-2">
-                <RxVideo />
-                <span>Videos</span>
-                </div>
-            </Link>
-          }
-        />
-        <Tab
-          key="album"
-          title={
-            <Link to="album">
-
-            <div className="flex items-center space-x-2">
-            <MdAlbum />
-              <span>Album</span>
-            </div>
-            </Link>
-          }
-        />
+        
       </Tabs>
       <Outlet/>
     </div>
