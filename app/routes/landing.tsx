@@ -64,6 +64,16 @@ export default function LandingPage() {
             </Link>
           }
         />
+        <Tab
+          key="products"
+          title={
+            <Link to="products" className="flex flex-col items-center">
+                <TbBrandGoogleAnalytics />
+                <span className="mb-2">Products</span>
+
+            </Link>
+          }
+        />
         
       </Tabs>
       <Outlet/>
