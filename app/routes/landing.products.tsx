@@ -10,74 +10,125 @@ import {
   Spacer,
   useDisclosure,
 } from "@nextui-org/react";
+import React, { useEffect, useState } from "react";
 // import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Resolver, useForm } from "react-hook-form";
 
-
-export default function Analytics() {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  // const [file, setFile] = useState<string | undefined>(undefined);
-  const { register, handleSubmit, formState: { errors } , setValue, watch} = useForm();
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files!.length > 0) {
-        const fileURL = URL.createObjectURL(files![0]);
-        // Use setValue to update the value managed by React Hook Form
-        setValue('file', fileURL, { shouldValidate: true });
-    }
+type FormValues = {
+  serviceName: string;
+  servicePrice: number;
+  serviceImage: string;
 };
 
-const file = watch('file');
-
-  const onSubmit = (data: any) => {
-    console.log(data);
-    if (file) {
-      console.log("File URL:", file);
-    }
+interface FormErrors {
+  serviceName?: {
+    type: string;
+    message: string;
   };
+  servicePrice?: {
+    type: string;
+    message: string;
+  };
+}
+
+const resolver: Resolver<FormValues> = async (values) => {
+  const errors: FormErrors = {};
+  if (!values.serviceName) {
+    errors.serviceName = {
+      type: "required",
+      message: "Service name is required.",
+    };
+  }
+  if (!values.servicePrice) {
+    errors.servicePrice = {
+      type: "required",
+      message: "Service Price is required.",
+    };
+  }
+  return {
+    values: Object.keys(errors).length ? {} : values,
+    errors,
+  };
+};
+
+export default function Products() {
+  const { isOpen, onOpen, onOpenChange } = useDisclosure();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+    watch,
+  } = useForm<FormValues>({ resolver });
+
+  const [file, setFile] = React.useState<string | undefined>();
+  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+        const selectedFile = e.target.files[0];
+        if (selectedFile) {
+            const fileUrl = URL.createObjectURL(selectedFile);
+            setFile(fileUrl);
+        }
+    }
+}
+
+  
+
+
+  const onSubmit = handleSubmit((data) => {
+    // Handle form submission here
+    console.log(data);
+  });
 
   return (
     <div>
       <Button onPress={onOpen} color="primary">
-      Add Product
+        Add Product
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
         <ModalContent>
           {(onClose) => (
-            <form onSubmit={handleSubmit((data) => { onSubmit(data); onClose(); })}>
-              <ModalHeader className="flex flex-col gap-1">Add Product</ModalHeader>
+            <form onSubmit={onSubmit}>
+              <ModalHeader className="flex flex-col gap-1">
+                Add Product
+              </ModalHeader>
               <ModalBody>
                 <Input
-                  {...register("serviceName", { required: true })}
+                  {...register("serviceName")}
+                  isInvalid={!!errors.serviceName}
+                  errorMessage={
+                    errors.serviceName ? errors.serviceName.message : ""
+                  }
                   autoFocus
                   label="Service name"
                   placeholder="Enter your service"
                   variant="bordered"
-                  />
-                  {errors.serviceName && <p className="text-red-500 text-xs mt-1">Service name is required</p>}
+                />
                 <Input
-                {...register("servicePrice", { required: true })}
+                  {...register("servicePrice")}
+                  isInvalid={!!errors.servicePrice}
+                  errorMessage={
+                    errors.servicePrice ? errors.servicePrice.message : ""
+                  }
                   label="Service price"
                   placeholder="Enter your service price"
                   variant="bordered"
-                  />
-                  {errors.servicePrice && <p className="text-red-500 text-xs mt-1">Service price is required</p>}
+                />
                 <div>
                   <label
                     htmlFor="service-image"
                     className="block text-sm font-medium text-gray-700"
-                    >
+                  >
                     Service image
                   </label>
                   <Spacer y={0.5} />
-                  <input
+                  <Input
                     id="service-image"
                     type="file"
-                    className="border border-gray-300 rounded-md shadow-sm p-2"
+                    {...register("serviceImage")}
                     placeholder="Insert your image"
                     onChange={handleChange}
-                    />
+                  />
                   <Spacer y={1} />
                   <div className="mt-4">
                     <p className="text-sm  mb-2">Image Preview:</p>
@@ -88,7 +139,7 @@ const file = watch('file');
                         alt="Service Preview"
                         src={file}
                         className="object-cover"
-                        />
+                      />
                     </div>
                   </div>
                 </div>
@@ -101,8 +152,7 @@ const file = watch('file');
                   Add Product
                 </Button>
               </ModalFooter>
-              </form>
-            
+            </form>
           )}
         </ModalContent>
       </Modal>
