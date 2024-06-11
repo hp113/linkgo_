@@ -41,7 +41,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return json({ error: response.error.message }, { status: 500, headers });
   }
 
-  return json({ message: "successfully added products" }, { headers });
+  return json({ message: "Details added successfully" }, { headers });
 };
 
 export default function Details() {
@@ -65,20 +65,6 @@ export default function Details() {
 
 
   const { errors } = formState;
-
-
-  // console.log(actionData);
-  // if (actionData && "message" in actionData) {
-  //   toast.success(actionData.message);
-  // }
-
-  // if (actionData?.message) {
-  //   toast.success(actionData.message);
-  // }
-
-  // if (actionData?.error) {
-  //   toast.error(actionData.error);
-  // }
 
   return (
     <div className="flex flex-col bg-gray-300 w-full pt-2 sm:items-center px-3">
