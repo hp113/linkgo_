@@ -41,15 +41,16 @@ export const action = async ({ request, context }: { request: Request, context: 
 
   const { data, error } = await supabaseClient
     .from('url_details')
-    .insert([
+    .upsert(
       { 
         username,
         store_name: storeName,
         description: bio || '', 
-        url_id: crypto.randomUUID(), 
+        url_id: '740e9b83-6c7a-40fc-81a3-dec2d7103e10', 
         created_at: new Date().toISOString(), 
-      }
-    ]);
+      },
+       { onConflict: 'url_id' }
+    );
 
   if (error) {
     return json({ error: error.message }, { status: 500, headers });
@@ -65,11 +66,12 @@ export default function Details() {
     formState: { errors }
   } = useForm<FormValues>({ resolver });
 
-  const actionData = useActionData<ActionData>();
+  const actionData = useActionData<typeof action>();
   const transition = useTransition();
 
   return (
     <div className="flex flex-col bg-gray-300 w-full pt-2 sm:items-center px-3">
+      {JSON.stringify(actionData)}
       <h1 className="mb-2">Basic details</h1>
       <div className="flex items-center flex-col gap-y-2 mb-2">
         <form method="post"className="flex items-center flex-col gap-y-2 mb-2">
@@ -79,23 +81,23 @@ export default function Details() {
             placeholder="Enter your Username"
             className="sm:min-w-[40rem]"
             {...register('username')}
-            isInvalid={!!errors.username || !!actionData?.errors?.username}
-            errorMessage={errors.username ? errors.username.message : actionData?.errors?.username}
+            isInvalid={!!errors.username}
+            errorMessage={errors.username ? errors.username.message : ''}
           />
           <Input
             type="text"
             label="Store Name"
             placeholder="Enter Store Name"
             {...register('storeName')}
-            isInvalid={!!errors.storeName || !!actionData?.errors?.storeName}
-            errorMessage={errors.storeName ? errors.storeName.message : actionData?.errors?.storeName}
+            isInvalid={!!errors.storeName }
+            errorMessage={errors.storeName ? errors.storeName.message :''}
           />
           <Textarea
             label="Bio"
             placeholder="Enter your description"
             {...register('bio')}
-            isInvalid={!!errors.bio || !!actionData?.errors?.bio}
-            errorMessage={errors.bio ? errors.bio.message : actionData?.errors?.bio}
+            isInvalid={!!errors.bio }
+            errorMessage={errors.bio ? errors.bio.message : ''}
           />
           <Button type="submit" color="primary">Submit</Button>
         </form>
