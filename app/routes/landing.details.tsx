@@ -1,51 +1,27 @@
 import { Button, Input, Textarea } from "@nextui-org/react";
-import { Resolver, useForm } from "react-hook-form";
 import { createSupabaseServerClient } from "~/supabase.server";
-import { json, redirect } from "@remix-run/node";
-import { useActionData } from "@remix-run/react";
-import { useTransition } from "react";
+import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form, useActionData } from "@remix-run/react";
+import { getValidatedFormData, useRemixForm } from "remix-hook-form";
+import zod from "zod";
+import {zodResolver} from '@hookform/resolvers/zod'
 
-type FormValues = {
-  username: string;
-  storeName: string;
-  bio: string;
-};
+const schema = zod.object({
+  username: zod.string().min(3),
+  storeName: zod.string().min(3),
+  bio: zod.string().min(3),
+});
 
-interface ActionData {
-  errors?: {
-    [key: string]: string;
-  };
-}
+const resolver = zodResolver(schema);
 
-const resolver: Resolver<FormValues> = async (values) => {
-  const errors: { [key: string]: string } = {};
-  if (!values.username) {
-    errors.username = "Username is required";
+export const action = async({request}: ActionFunctionArgs) =>{
+  const {receivedValues, errors, data} = await getValidatedFormData<zod.infer<typeof schema>>(request, resolver);
+  if(errors){
+    return json({errors, receivedValues});
   }
-  if (!values.storeName) {
-    errors.storeName = "Store name is required";
-  }
-  if (!values.bio) {
-    errors.bio = "Bio is required";
-  }
-  return { values, errors };
-};
-
-export const action = async ({
-  request,
-  context,
-}: {
-  request: Request;
-  context: any;
-}) => {
+  const {username, storeName, bio} = data;
   const { supabaseClient, headers } = createSupabaseServerClient(request);
-
-  const formData = await request.formData();
-  const username = formData.get("username") as string;
-  const storeName = formData.get("storeName") as string;
-  const bio = formData.get("bio") as string;
-
-  const { data, error } = await supabaseClient.from("url_details").upsert(
+  const response = await supabaseClient.from("url_details").upsert(
     {
       username,
       store_name: storeName,
@@ -55,35 +31,30 @@ export const action = async ({
     },
     { onConflict: "url_id" }
   );
-
-  if (error) {
-    return json({ error: error.message }, { status: 500, headers });
+  
+  if (response.error) {
+    return json({ error: response.error.message }, { status: 500, headers });
   }
-
+  
   return redirect("/success", { headers });
-};
+}
+
 
 export default function Details() {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<FormValues>({ resolver });
+  const {formState, handleSubmit, register } = useRemixForm<zod.infer<typeof schema>>({ resolver });
 
+  const { errors } = formState;
   const actionData = useActionData<typeof action>();
-
-  const onsubmit = (formdata: FormValues) => {
-    console.log(formdata);
-  };
 
   return (
     <div className="flex flex-col bg-gray-300 w-full pt-2 sm:items-center px-3">
-      {JSON.stringify(actionData)}
+      {/* {JSON.stringify(actionData)} */}
       <h1 className="mb-2">Basic details</h1>
       <div className="flex items-center flex-col gap-y-2 mb-2">
-        <form
+        <Form
           method="post"
-          onSubmit={handleSubmit(onsubmit)}
+          action="/landing.details"
+          onSubmit={handleSubmit}
           className="flex items-center flex-col gap-y-2 mb-2"
         >
           <Input
@@ -93,7 +64,7 @@ export default function Details() {
             className="sm:min-w-[40rem]"
             {...register("username")}
             isInvalid={!!errors.username}
-            errorMessage={typeof errors.username === 'string' ? errors.username : ""}
+            errorMessage={errors.username?.message || ""}
           />
           <Input
             type="text"
@@ -101,20 +72,19 @@ export default function Details() {
             placeholder="Enter Store Name"
             {...register("storeName")}
             isInvalid={!!errors.storeName}
-            errorMessage={typeof errors.storeName === 'string' ? errors.storeName : ''}
+            errorMessage={errors.storeName?.message||''}
           />
-          {JSON.stringify(errors)}
           <Textarea
             label="Bio"
             placeholder="Enter your description"
             {...register("bio")}
             isInvalid={!!errors.bio}
-            errorMessage={typeof errors.bio ==='string'? errors.bio : ""}
+            errorMessage={errors.bio?.message||""}
           />
           <Button type="submit" color="primary">
             Submit
           </Button>
-        </form>
+        </Form>
       </div>
     </div>
   );
