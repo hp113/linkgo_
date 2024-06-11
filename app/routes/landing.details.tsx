@@ -4,7 +4,10 @@ import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
 import { getValidatedFormData, useRemixForm } from "remix-hook-form";
 import zod from "zod";
-import {zodResolver} from '@hookform/resolvers/zod'
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from 'sonner'
+import React from "react";
+
 
 const schema = zod.object({
   username: zod.string().min(3),
@@ -14,12 +17,14 @@ const schema = zod.object({
 
 const resolver = zodResolver(schema);
 
-export const action = async({request}: ActionFunctionArgs) =>{
-  const {receivedValues, errors, data} = await getValidatedFormData<zod.infer<typeof schema>>(request, resolver);
-  if(errors){
-    return json({errors, receivedValues});
+export const action = async ({ request }: ActionFunctionArgs) => {
+  const { receivedValues, errors, data } = await getValidatedFormData<
+    zod.infer<typeof schema>
+  >(request, resolver);
+  if (errors) {
+    return json({ errors, receivedValues });
   }
-  const {username, storeName, bio} = data;
+  const { username, storeName, bio } = data;
   const { supabaseClient, headers } = createSupabaseServerClient(request);
   const response = await supabaseClient.from("url_details").upsert(
     {
@@ -31,20 +36,49 @@ export const action = async({request}: ActionFunctionArgs) =>{
     },
     { onConflict: "url_id" }
   );
-  
+
   if (response.error) {
     return json({ error: response.error.message }, { status: 500, headers });
   }
-  
-  return redirect("/success", { headers });
-}
 
+  return json({ message: "successfully added products" }, { headers });
+};
 
 export default function Details() {
-  const {formState, handleSubmit, register } = useRemixForm<zod.infer<typeof schema>>({ resolver });
+  const { formState, handleSubmit, register } = useRemixForm<
+    zod.infer<typeof schema>
+  >({ resolver });
+
+  const actionData = useActionData<typeof action>();
+
+  React.useEffect(() => {
+    if (actionData) {
+      if ('message' in actionData) {
+        toast.success(actionData.message);
+      }
+
+      if ('error' in actionData) {
+        toast.error(actionData.error);
+      }
+    }
+  }, [actionData]);
+
 
   const { errors } = formState;
-  const actionData = useActionData<typeof action>();
+
+
+  // console.log(actionData);
+  // if (actionData && "message" in actionData) {
+  //   toast.success(actionData.message);
+  // }
+
+  // if (actionData?.message) {
+  //   toast.success(actionData.message);
+  // }
+
+  // if (actionData?.error) {
+  //   toast.error(actionData.error);
+  // }
 
   return (
     <div className="flex flex-col bg-gray-300 w-full pt-2 sm:items-center px-3">
@@ -72,18 +106,19 @@ export default function Details() {
             placeholder="Enter Store Name"
             {...register("storeName")}
             isInvalid={!!errors.storeName}
-            errorMessage={errors.storeName?.message||''}
+            errorMessage={errors.storeName?.message || ""}
           />
           <Textarea
             label="Bio"
             placeholder="Enter your description"
             {...register("bio")}
             isInvalid={!!errors.bio}
-            errorMessage={errors.bio?.message||""}
+            errorMessage={errors.bio?.message || ""}
           />
-          <Button type="submit" color="primary">
+          <Button type="submit"  color="primary">
             Submit
           </Button>
+          
         </Form>
       </div>
     </div>
