@@ -25,7 +25,7 @@ export default function HomeProducts({ productDetails }: HomePageProductsProps) 
           shadow="sm"
           key={product.id}
           isPressable
-          className="m-2 flex flex-row"
+          className="m-4 flex flex-row"
         >
           <CardBody className="overflow-visible p-0 flex-shrink-0 flex-row gap-2">
             <Image
