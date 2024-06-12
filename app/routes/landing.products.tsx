@@ -35,15 +35,15 @@ const schema = zod.object({
   serviceImage: zod
   .any()
   .refine((files) => files && files.length > 0, "Image is required")
-  .refine((files) => {
-    const sizeOk = files?.[0]?.size <= MAX_FILE_SIZE;
-    // console.log('File size:', files?.[0]?.size, 'Valid:', sizeOk); // Debugging: Log file size and validity
-    return sizeOk; // Validate file size is within the limit
-  }, `Max image size is 5MB.`)
-  .refine(
-    (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-    "Only .jpg, .jpeg, .png and .webp formats are supported."
-  )
+  // .refine((files) => {
+  //   const sizeOk = files?.[0]?.size <= MAX_FILE_SIZE;
+  //   // console.log('File size:', files?.[0]?.size, 'Valid:', sizeOk); // Debugging: Log file size and validity
+  //   return sizeOk; // Validate file size is within the limit
+  // }, `Max image size is 5MB.`)
+  // .refine(
+  //   (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
+  //   "Only .jpg, .jpeg, .png and .webp formats are supported."
+  // )
 });
 
 const resolver = zodResolver(schema);
@@ -154,12 +154,7 @@ export default function Products() {
                   placeholder="Enter your service price"
                   variant="bordered"
                 />
-                <Input
-                {...register("serviceImage")}
-                isInvalid={!!errors.serviceImage}
-                type="file"
-                />
-                {/* <div>
+                <div>
                   <label
                     htmlFor="service-image"
                     className="block text-sm font-medium text-gray-700"
@@ -173,8 +168,8 @@ export default function Products() {
                     {...register("serviceImage")}
                     placeholder="Insert your image"
                     onChange={handleChange}
-                    // isInvalid={!!errors.serviceImage}
-                    // errorMessage={errors.serviceImage?.message || ""}
+                    isInvalid={!!errors.serviceImage}
+                    errorMessage={errors.serviceImage?.message as string || ''}
                   />
                   <Spacer y={1} />
                   <div className="mt-4">
@@ -189,7 +184,7 @@ export default function Products() {
                       />
                     </div>
                   </div>
-                </div> */}
+                </div>
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={onClose}>
