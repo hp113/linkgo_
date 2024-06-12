@@ -19,7 +19,7 @@ export default function HomeProducts({ productDetails }: HomePageProductsProps) 
   
   // console.log(productDetails);
   return (
-    <div className="gap-2 grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full mx-4">
+    <div className="gap-2 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full mx-4">
       {productDetails.map((product) => (
         <Card
           shadow="sm"

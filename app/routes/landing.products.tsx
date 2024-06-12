@@ -119,7 +119,7 @@ export default function Products() {
 
 
   return (
-    <div>
+    <div className="flex flex-col items-center">
       <Button onPress={onOpen} color="primary">
         Add Product
       </Button>

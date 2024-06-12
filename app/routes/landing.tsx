@@ -33,41 +33,42 @@ export default function LandingPage() {
       <h1 className="font-bold mt-4 sm:text-xl">Hi Vima!!!</h1>
 
       <p className="sm:text-lg"> Your link.go URL</p>
-      <Snippet symbol=""  variant={undefined} className="mt-2 text-blue-600">npm install @nextui-org/react</Snippet>
+      <Snippet symbol=""  variant={undefined} className="mt-2 text-blue-600"><Link to="/success">npm install @nextui-org/react</Link></Snippet>
+      
       </div>
       <Tabs aria-label="Options" color="default" variant="underlined" className="px-3 my-2 ">
         <Tab
           key="details"
-          className="sm:text-lg sm:mt-4 sm:mb-2"
+          className="sm:text-lg mt-2 sm:mt-4 sm:mb-2"
           title={
             <Link to="details" className="flex flex-col items-center">
                 <HiOutlineGlobeAlt />
 
 
-                <span className="sm:mb-4 ">Details</span>
+                <span className="mb-2 sm:mb-4 ">Details</span>
 
             </Link>
           }
         />
         <Tab
           key="analytics"
-          className="sm:text-lg sm:mt-4 sm:mb-2"
+          className="sm:text-lg mt-2 sm:mt-4 sm:mb-2"
           title={
             <Link to="analytics" className="flex flex-col items-center">
                 <TbBrandGoogleAnalytics />
-                <span className="sm:mb-4">Analytics</span>
+                <span className="mb-2  sm:mb-4">Analytics</span>
 
             </Link>
           }
         />
         <Tab
           key="products"
-          className="sm:text-lg sm:mt-4 sm:mb-2"
+          className="sm:text-lg mt-2 sm:mt-4 sm:mb-2"
           title={
             <Link to="products" className="flex flex-col items-center">
                 <MdOutlineProductionQuantityLimits />
 
-                <span className="sm:mb-4">Products</span>
+                <span className="mb-2 sm:mb-4">Products</span>
 
             </Link>
           }
