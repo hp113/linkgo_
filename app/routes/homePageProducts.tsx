@@ -7,7 +7,7 @@ import { fetchProducts } from "~/dataFetchingHomePage";
 interface Product {
   id: number;
   service_name: string;
-  service_price: string;
+  service_price: number;
   service_logo: string;
 }
 

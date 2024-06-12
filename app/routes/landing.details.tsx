@@ -1,8 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, CardBody, Input, Textarea } from "@nextui-org/react";
-import { createSupabaseServerClient } from "~/supabase.server";
-import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -16,7 +13,6 @@ import {
   useLoaderData,
   useRouteError,
 } from "@remix-run/react";
-import React from "react";
 import { getValidatedFormData, useRemixForm } from "remix-hook-form";
 import { toast } from "sonner";
 import React from "react";
@@ -64,24 +60,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return json({ message: "Details added successfully" }, { headers });
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { supabaseClient, headers } = createSupabaseServerClient(request);
-  const { data, error } = await supabaseClient
-    .from("url_details")
-    .select("*")
-    .eq("url_id", "740e9b83-6c7a-40fc-81a3-dec2d7103e10")
-    .single();
-
-  if (error) {
-    throw new Response(error.message, { status: 500, headers });
-  }
-  return json({ data }, { headers });
-};
 
 export default function Details() {
   const {storeDetails} = useLoaderData<typeof loader>();
 
-  const { data } = useLoaderData<typeof loader>();
   const { formState, handleSubmit, register } = useRemixForm<
     zod.infer<typeof schema>
   >({ resolver, defaultValues: {
@@ -89,14 +71,6 @@ export default function Details() {
     storeName: storeDetails[0].store_name || "",
     bio: storeDetails[0].description || "",
   } });
-  >({
-    resolver,
-    defaultValues: {
-      username: data?.username || "",
-      storeName: data?.store_name || "",
-      bio: data?.description || "",
-    },
-  });
 
   const actionData = useActionData<typeof action>();
 

@@ -23,13 +23,13 @@ export const fetchUrlDetails = async (request: Request, url_id?: string) => {
   };
   
   export interface Product {
-  id: number;
-  service_name: string;
-  service_price: string;
-  service_logo: string;
-  url_id: string;
-  created_at: string;
-}
+    id: number;
+    service_name: string;
+    service_price: number;
+    service_logo: string;
+    url_id: string;
+    created_at: string;
+  }
   // Function to fetch data from products table
   export const fetchProducts = async (request: Request): Promise<Product[]> => {
     const { supabaseClient } = createSupabaseServerClient(request);
