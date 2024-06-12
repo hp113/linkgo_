@@ -27,7 +27,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   if (error) {
     return json({ message: error.message }, 400);
   }
-  
+
   return redirect(redirectUrl);
 };
 
@@ -51,39 +51,46 @@ export default function Create() {
   const [searchParams] = useSearchParams();
   const actionData = useActionData<typeof action>();
   return (
-    <div className="flex flex-[0.8] h-screen w-screen">
-      {JSON.stringify(actionData)}
-      <div className="flex-1">{searchParams.get("store_name")}</div>
-      <Form method="post" className="w-full flex flex-col m-2">
-        <h1 className="text-2xl font-bold mx-auto">
-          What is the type of your buisness?
-        </h1>
-        <p className="text-gray-800 sm:mx-auto">
-          This will help us tailor your page according to your needs.
-        </p>
-        <input
-          type="hidden"
-          value={searchParams.get("store_name") ?? ""}
-          name="url"
-        />
-        <RadioGroup name="type" className="mx-auto my-3">
-          <CustomRadio
-            description="For cafes, restaurants, boutiques etc that have a physical location"
-            value="free"
+    <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start h-screen w-screen bg-gradient-to-r from-blue-100 to-blue-300 p-4">
+      {/* {JSON.stringify(actionData)} */}
+      {/* <div className="flex-1">{searchParams.get("store_name")}</div> */}
+      <div className="bg-white p-6 sm:p-10 rounded-lg shadow-lg w-full max-w-lg mx-auto">
+        <Form method="post" className="w-full flex flex-col">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4">
+            What is the type of your buisness?
+          </h1>
+          <p className="text-gray-700 text-center mb-6">
+            This will help us tailor your page according to your needs.
+          </p>
+          <input
+            type="hidden"
+            value={searchParams.get("store_name") ?? ""}
+            name="url"
+          />
+          <RadioGroup name="type" className="mx-auto my-3">
+            <CustomRadio
+              description="For cafes, restaurants, boutiques etc that have a physical location"
+              value="free"
+            >
+              Physical store
+            </CustomRadio>
+            <CustomRadio
+              description="For any business that runs completely online."
+              value="pro"
+            >
+              Digital Business
+            </CustomRadio>
+          </RadioGroup>
+          <Button
+            variant="solid"
+            color="primary"
+            type="submit"
+            className="mx-auto mt-6"
           >
-            Physical store
-          </CustomRadio>
-          <CustomRadio
-            description="For any business that runs completely online."
-            value="pro"
-          >
-            Digital Business
-          </CustomRadio>
-        </RadioGroup>
-        <Button variant="solid" color="primary" type="submit" className="mx-auto">
-          Next
-        </Button>
-      </Form>
+            Next
+          </Button>
+        </Form>
+      </div>
     </div>
   );
 }

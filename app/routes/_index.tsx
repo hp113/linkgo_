@@ -119,6 +119,7 @@ export default function Index() {
           </Link>
         ) : (
           <User
+            className="text-white"
             name={user.full_name}
             avatarProps={{
               src: user.avatar_url ?? undefined,
