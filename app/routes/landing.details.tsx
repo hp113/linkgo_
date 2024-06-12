@@ -1,12 +1,13 @@
 import { Button, Card, CardBody, Input, Textarea } from "@nextui-org/react";
 import { createSupabaseServerClient } from "~/supabase.server";
-import { ActionFunctionArgs, json, redirect } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
+import { Form, useActionData, useLoaderData } from "@remix-run/react";
 import { getValidatedFormData, useRemixForm } from "remix-hook-form";
 import zod from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import React from "react";
+import { fetchUrlDetails } from "~/dataFetchingHomePage";
 
 const schema = zod.object({
   username: zod.string().min(3),
@@ -15,6 +16,11 @@ const schema = zod.object({
 });
 
 const resolver = zodResolver(schema);
+
+export const loader = async({request}: LoaderFunctionArgs) => {
+  const storeDetails = await fetchUrlDetails(request, '740e9b83-6c7a-40fc-81a3-dec2d7103e10');
+  return json({storeDetails});
+}
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { receivedValues, errors, data } = await getValidatedFormData<
@@ -44,9 +50,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 export default function Details() {
+  const {storeDetails} = useLoaderData<typeof loader>();
+
   const { formState, handleSubmit, register } = useRemixForm<
     zod.infer<typeof schema>
-  >({ resolver });
+  >({ resolver, defaultValues: {
+    username: storeDetails[0].username || "",
+    storeName: storeDetails[0].store_name || "",
+    bio: storeDetails[0].description || "",
+  } });
 
   const actionData = useActionData<typeof action>();
 

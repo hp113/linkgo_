@@ -1,8 +1,18 @@
+
 import { createSupabaseServerClient } from "./supabase.server";
 
-export const fetchUrlDetails = async (request: Request) => {
+export const fetchUrlDetails = async (request: Request, url_id?: string) => {
     const { supabaseClient } = createSupabaseServerClient(request);
-    const { data, error } = await supabaseClient.from('url_details').select('*').single();
+    let query = supabaseClient.from('url_details').select('*');
+
+  // Conditionally modify the query based on the presence of url_id
+  if (typeof url_id === 'string') {
+    query = query.eq('url_id', url_id);
+  }
+
+  // Execute the modified query
+  const { data, error } = await query;
+  
   
     if (error) {
       console.error('Error fetching URL details:', error);
