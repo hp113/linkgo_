@@ -1,6 +1,8 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   Button,
+  Card,
+  CardBody,
   Image,
   Input,
   Modal,
@@ -11,122 +13,210 @@ import {
   Spacer,
   useDisclosure,
 } from "@nextui-org/react";
-import { ActionFunctionArgs, json } from "@remix-run/node";
-import { Form, useActionData } from "@remix-run/react";
-import React, { useEffect, useState } from "react";
-// import { useState } from "react";
-import { Resolver, useForm } from "react-hook-form";
-import { getValidatedFormData, useRemixForm } from "remix-hook-form";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  json,
+  unstable_createMemoryUploadHandler,
+  unstable_parseMultipartFormData,
+} from "@remix-run/node";
+import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import { useEffect } from "react";
+import { Controller } from "react-hook-form";
+import { TbTrashFilled } from "react-icons/tb";
+import { useRemixForm, validateFormData } from "remix-hook-form";
+import { toast } from "sonner";
 import zod from "zod";
+import { createSupabaseServerClient } from "~/supabase.server";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+];
 
-type FormValues = {
-  serviceName: string;
-  servicePrice: number;
-  serviceImage: string;
-};
-
-const MAX_FILE_SIZE = 5*1024*1024;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-
-const schema = zod.object({
+const AddProductSchema = zod.object({
+  _action: zod.literal("add"),
   serviceName: zod.string().min(3),
-  servicePrice: zod.preprocess((val) => Number(val), zod.number().min(1, "Service price must be at least 1")),
-  serviceImage: zod
-  .any()
-  .refine((files) => files && files.length > 0, "Image is required")
-  // .refine((files) => {
-  //   const sizeOk = files?.[0]?.size <= MAX_FILE_SIZE;
-  //   // console.log('File size:', files?.[0]?.size, 'Valid:', sizeOk); // Debugging: Log file size and validity
-  //   return sizeOk; // Validate file size is within the limit
-  // }, `Max image size is 5MB.`)
-  // .refine(
-  //   (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-  //   "Only .jpg, .jpeg, .png and .webp formats are supported."
-  // )
+  servicePrice: zod.number().min(1, "Service price must be at least 1"),
+  serviceImage: zod.any(),
+});
+const DeleteProductSchema = zod.object({
+  _action: zod.literal("delete"),
+  serviceId: zod.string(),
 });
 
+const schema = zod.discriminatedUnion("_action", [
+  AddProductSchema,
+  DeleteProductSchema,
+]);
 const resolver = zodResolver(schema);
 
+export const action = async ({ request }: ActionFunctionArgs) => {
+  console.log("Request", request.headers.get("content-type"));
+  const formData = await unstable_parseMultipartFormData(
+    request,
+    unstable_createMemoryUploadHandler({
+      // maxPartSize: MAX_FILE_SIZE,
+      // filter(args) {
+      //   return ACCEPTED_IMAGE_TYPES.includes(args.contentType);
+      // },
+    })
+  );
+  const url_id = "740e9b83-6c7a-40fc-81a3-dec2d7103e10";
+  const { errors, data } = await validateFormData<zod.infer<typeof schema>>(
+    formData,
+    resolver
+  );
 
-interface FormErrors {
-  serviceName?: {
-    type: string;
-    message: string;
-  };
-  servicePrice?: {
-    type: string;
-    message: string;
-  };
-}
-
-// const resolver: Resolver<FormValues> = async (values) => {
-//   const errors: FormErrors = {};
-//   if (!values.serviceName) {
-//     errors.serviceName = {
-//       type: "required",
-//       message: "Service name is required.",
-//     };
-//   }
-//   if (!values.servicePrice) {
-//     errors.servicePrice = {
-//       type: "required",
-//       message: "Service Price is required.",
-//     };
-//   }
-//   return {
-//     values: Object.keys(errors).length ? {} : values,
-//     errors,
-//   };
-// };
-
-export const action = async({request}: ActionFunctionArgs)=>{
-  // console.log("Request", request);
-  const {receivedValues, errors, data} = await getValidatedFormData<zod.infer<typeof schema>>(request, resolver);
-  if(errors){
-    return json({errors, receivedValues});
+  if (errors) {
+    return json({ errors }, { status: 422 });
   }
-  const {serviceName, servicePrice, serviceImage} = data;
 
-  console.log(serviceName, servicePrice, serviceImage);
-  return null;
-}
+  const { _action } = data;
+  const { supabaseClient } = createSupabaseServerClient(request);
+
+  if (_action === "delete") {
+    const { serviceId } = data;
+    const { error } = await supabaseClient
+      .from("products")
+      .delete()
+      .eq("id", serviceId);
+    if (error) {
+      return json({ error: error.message }, { status: 500 });
+    }
+    const { error: deleteImageError } = await supabaseClient.storage
+      .from("services")
+      .remove([`${url_id}/${serviceId}`]);
+    if (deleteImageError) {
+      return json({ error: deleteImageError.message }, { status: 500 });
+    }
+
+    return json({ message: "Product deleted successfully" });
+  } else if (_action === "add") {
+    const { serviceName, servicePrice, serviceImage } = data;
+
+    const { data: uploadedData, error } = await supabaseClient.storage
+      .from("services")
+      .upload(`${url_id}/${Date.now()}`, serviceImage);
+    if (error) {
+      return json({ error: error.message }, { status: 500 });
+    }
+    const { error: insertError } = await supabaseClient
+      .from("products")
+      .insert({
+        service_name: serviceName,
+        service_price: servicePrice,
+        service_logo: uploadedData.path,
+        url_id,
+      });
+    if (insertError) {
+      return json({ error: insertError.message }, { status: 500 });
+    }
+    return json({ message: "Product added successfully" });
+  }
+  return json({ error: "Invalid action" }, { status: 400 });
+};
+
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { supabaseClient, headers } = createSupabaseServerClient(request);
+  const { data, error } = await supabaseClient
+    .from("products")
+    .select("*")
+    .eq("url_id", "740e9b83-6c7a-40fc-81a3-dec2d7103e10")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    throw new Response(error.message, { status: 500, headers });
+  }
+  const dataWithPublicUrl = data.map((item) => {
+    return {
+      ...item,
+      service_logo: supabaseClient.storage
+        .from("services")
+        .getPublicUrl(item.service_logo).data.publicUrl,
+    };
+  });
+  return json({ data: dataWithPublicUrl }, { headers });
+};
 
 export default function Products() {
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const {
-    formState,
-    handleSubmit,
-    register,
-  } = useRemixForm<zod.infer<typeof schema>>({ resolver });
+  const { formState, watch, handleSubmit, register, control } = useRemixForm<
+    zod.infer<typeof AddProductSchema>
+  >({
+    resolver,
+    submitConfig: { encType: "multipart/form-data" },
+  });
 
-  const [file, setFile] = React.useState<string | undefined>();
-  function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    if (e.target.files && e.target.files.length > 0) {
-        const selectedFile = e.target.files[0];
-        if (selectedFile) {
-            const fileUrl = URL.createObjectURL(selectedFile);
-            setFile(fileUrl);
-        }
-    }
-}
+  const loaderData = useLoaderData<typeof loader>();
 
   const actionData = useActionData<typeof action>();
-  const {errors} = formState;
+  const { errors } = formState;
 
-  console.log("Errors", errors);  
+  useEffect(() => {
+    if (actionData) {
+      if ("message" in actionData) {
+        toast.success(actionData.message);
+      }
 
-
+      if ("error" in actionData) {
+        toast.error(actionData.error);
+      }
+    }
+  }, [actionData]);
 
   return (
     <div className="flex flex-col items-center">
+      <h1 className="text-2xl font-semibold">Products</h1>
+      <div className="gap-2 grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 w-full mx-4 ">
+        {loaderData?.data.map((item, index) => (
+          <Card shadow="sm" key={index} className="m-2 flex flex-row">
+            <CardBody className=" p-0 flex-shrink-0 flex-row flex-1 gap-2">
+              <Image
+                shadow="sm"
+                radius="lg"
+                // width={70}
+                //   height={50}
+                alt={item.service_name}
+                className=" objec-cover w-20 h-20"
+                src={item.service_logo}
+              />
+              <Form method="post" encType="multipart/form-data">
+                <div>
+                  <h2 className="text-lg">{item.service_name}</h2>
+                  <input type="hidden" name="serviceId" value={item.id} />
+                  <p className="text-default-500">{item.service_price}</p>
+                </div>
+                <Button
+                  isIconOnly
+                  className="text-default-900/60 data-[hover]:bg-foreground/10 -translate-y-2 translate-x-2"
+                  radius="full"
+                  variant="light"
+                  type="submit"
+                  name="_action"
+                  value="delete"
+                >
+                  <TbTrashFilled className="w-4 h-4" />
+                </Button>
+              </Form>
+            </CardBody>
+          </Card>
+        ))}
+      </div>
       <Button onPress={onOpen} color="primary">
         Add Product
       </Button>
       <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
         <ModalContent>
           {(onClose) => (
-            <Form method="post" action="/landing.products" onSubmit={handleSubmit}>
+            <Form
+              method="post"
+              onSubmit={handleSubmit}
+              encType="multipart/form-data"
+            >
               <ModalHeader className="flex flex-col gap-1">
                 Add Product
               </ModalHeader>
@@ -135,10 +225,7 @@ export default function Products() {
                 <Input
                   {...register("serviceName")}
                   isInvalid={!!errors.serviceName}
-                  errorMessage={
-                    errors.serviceName?.message||""
-                  }
-                  autoFocus
+                  errorMessage={errors.serviceName?.message || ""}
                   label="Service name"
                   placeholder="Enter your service"
                   variant="bordered"
@@ -146,9 +233,7 @@ export default function Products() {
                 <Input
                   {...register("servicePrice")}
                   isInvalid={!!errors.servicePrice}
-                  errorMessage={
-                    errors.servicePrice ?.message || ""
-                  }
+                  errorMessage={errors.servicePrice?.message || ""}
                   type="number"
                   label="Service price"
                   placeholder="Enter your service price"
@@ -156,33 +241,45 @@ export default function Products() {
                 />
                 <div>
                   <label
-                    htmlFor="service-image"
+                    htmlFor="serviceImage"
                     className="block text-sm font-medium text-gray-700"
                   >
                     Service image
                   </label>
                   <Spacer y={0.5} />
-                  <Input
-                    id="service-image"
-                    type="file"
-                    {...register("serviceImage")}
-                    placeholder="Insert your image"
-                    onChange={handleChange}
-                    isInvalid={!!errors.serviceImage}
-                    errorMessage={errors.serviceImage?.message as string || ''}
+                  <Controller
+                    control={control}
+                    name={"serviceImage"}
+                    rules={{ required: "Service image is required" }}
+                    render={({ field: { value, onChange, ...field } }) => {
+                      return (
+                        <input
+                          {...field}
+                          value={value?.fileName}
+                          onChange={(event) => {
+                            console.log(event.target.files);
+                            onChange(event.target.files?.[0]);
+                          }}
+                          type="file"
+                          id="picture"
+                        />
+                      );
+                    }}
                   />
+
                   <Spacer y={1} />
                   <div className="mt-4">
                     <p className="text-sm  mb-2">Image Preview:</p>
-                    <div className="border border-gray-300 rounded-2xl overflow-hidden w-[300px] h-[200px]">
-                      <Image
-                        width={300}
-                        height={100}
-                        alt="Service Preview"
-                        src={file}
-                        className="object-cover"
-                      />
-                    </div>
+                    <Image
+                      width={300}
+                      height={100}
+                      alt="Service Preview"
+                      src={
+                        watch("serviceImage") &&
+                        URL.createObjectURL(watch("serviceImage"))
+                      }
+                      className="border border-gray-300 rounded-2xl overflow-hidden w-[300px] h-[200px] object-cover"
+                    />
                   </div>
                 </div>
               </ModalBody>
@@ -190,7 +287,7 @@ export default function Products() {
                 <Button color="danger" variant="flat" onPress={onClose}>
                   Close
                 </Button>
-                <Button type="submit" color="primary">
+                <Button type="submit" color="primary" onPress={onClose}>
                   Add Product
                 </Button>
               </ModalFooter>

@@ -1,13 +1,28 @@
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button, Card, CardBody, Input, Textarea } from "@nextui-org/react";
 import { createSupabaseServerClient } from "~/supabase.server";
 import { ActionFunctionArgs, LoaderFunctionArgs, json, redirect } from "@remix-run/node";
 import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  json,
+  redirect,
+} from "@remix-run/node";
+import {
+  Form,
+  isRouteErrorResponse,
+  useActionData,
+  useLoaderData,
+  useRouteError,
+} from "@remix-run/react";
+import React from "react";
 import { getValidatedFormData, useRemixForm } from "remix-hook-form";
-import zod from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import React from "react";
 import { fetchUrlDetails } from "~/dataFetchingHomePage";
+import zod from "zod";
+import { createSupabaseServerClient } from "~/supabase.server";
 
 const schema = zod.object({
   username: zod.string().min(3),
@@ -49,9 +64,24 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return json({ message: "Details added successfully" }, { headers });
 };
 
+export const loader = async ({ request }: LoaderFunctionArgs) => {
+  const { supabaseClient, headers } = createSupabaseServerClient(request);
+  const { data, error } = await supabaseClient
+    .from("url_details")
+    .select("*")
+    .eq("url_id", "740e9b83-6c7a-40fc-81a3-dec2d7103e10")
+    .single();
+
+  if (error) {
+    throw new Response(error.message, { status: 500, headers });
+  }
+  return json({ data }, { headers });
+};
+
 export default function Details() {
   const {storeDetails} = useLoaderData<typeof loader>();
 
+  const { data } = useLoaderData<typeof loader>();
   const { formState, handleSubmit, register } = useRemixForm<
     zod.infer<typeof schema>
   >({ resolver, defaultValues: {
@@ -59,6 +89,14 @@ export default function Details() {
     storeName: storeDetails[0].store_name || "",
     bio: storeDetails[0].description || "",
   } });
+  >({
+    resolver,
+    defaultValues: {
+      username: data?.username || "",
+      storeName: data?.store_name || "",
+      bio: data?.description || "",
+    },
+  });
 
   const actionData = useActionData<typeof action>();
 
@@ -77,48 +115,6 @@ export default function Details() {
   const { errors } = formState;
 
   return (
-    // <div className="flex flex-col bg-gray-300 w-full pt-2 sm:items-center px-3">
-    //   {/* {JSON.stringify(actionData)} */}
-    //   <h1 className="mb-2">Basic details</h1>
-    //   <div className="flex items-center flex-col gap-y-2 mb-2">
-    //     <Form
-    //       method="post"
-    //       action="/landing.details"
-    //       onSubmit={handleSubmit}
-    //       className="flex items-center flex-col gap-y-2 mb-2"
-    //     >
-    //       <Input
-    //         type="text"
-    //         label="Username"
-    //         placeholder="Enter your Username"
-    //         className="sm:min-w-[40rem]"
-    //         {...register("username")}
-    //         isInvalid={!!errors.username}
-    //         errorMessage={errors.username?.message || ""}
-    //       />
-    //       <Input
-    //         type="text"
-    //         label="Store Name"
-    //         placeholder="Enter Store Name"
-    //         {...register("storeName")}
-    //         isInvalid={!!errors.storeName}
-    //         errorMessage={errors.storeName?.message || ""}
-    //       />
-    //       <Textarea
-    //         label="Bio"
-    //         placeholder="Enter your description"
-    //         {...register("bio")}
-    //         isInvalid={!!errors.bio}
-    //         errorMessage={errors.bio?.message || ""}
-    //       />
-    //       <Button type="submit"  color="primary">
-    //         Submit
-    //       </Button>
-
-    //     </Form>
-    //   </div>
-    // </div>
-
     <div className="flex flex-col bg-gray-100 w-full min-h-screen items-center py-6 px-4 sm:px-6 lg:px-8">
       <Card className="w-full max-w-2xl bg-white shadow-md rounded-lg p-6">
         <h1 className="text-2xl font-semibold text-center text-gray-800 mb-4">
@@ -167,4 +163,14 @@ export default function Details() {
       </Card>
     </div>
   );
+}
+
+export function ErrorBoundary() {
+  const error = useRouteError();
+  if (isRouteErrorResponse(error)) {
+    toast.error(error.data);
+    return redirect("/landing");
+  } else {
+    return redirect("/landing");
+  }
 }

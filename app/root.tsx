@@ -6,6 +6,7 @@ import {
   Scripts,
   ScrollRestoration,
   useLoaderData,
+  useNavigate,
   useRevalidator,
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
@@ -14,8 +15,8 @@ import { createSupabaseServerClient } from "./supabase.server";
 import { NextUIProvider } from "@nextui-org/react";
 import type { LinksFunction } from "@remix-run/node";
 import { createBrowserClient } from "@supabase/auth-helpers-remix";
-import stylesheet from "~/tailwind.css?url";
 import { Toaster } from "sonner";
+import stylesheet from "~/tailwind.css?url";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -47,6 +48,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useLoaderData<typeof loader>();
+  const navigate = useNavigate();
   return (
     <html lang="en">
       <head>
@@ -56,7 +58,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <NextUIProvider>{children}</NextUIProvider>
+        <NextUIProvider navigate={navigate}>{children}</NextUIProvider>
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{
@@ -66,7 +68,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
         <Scripts />
-        <Toaster position="top-right" richColors/>
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );
