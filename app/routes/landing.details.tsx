@@ -5,6 +5,8 @@ import {
   LoaderFunctionArgs,
   json,
   redirect,
+  unstable_createMemoryUploadHandler,
+  unstable_parseMultipartFormData,
 } from "@remix-run/node";
 import {
   Form,
@@ -20,6 +22,7 @@ import zod from "zod";
 import { createSupabaseServerClient } from "~/supabase.server";
 import { fetchUrlDetails } from "~/utils/dataFetcher";
 import { Controller } from "react-hook-form";
+import { c } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 
 const schema = zod.object({
   username: zod.string().min(3),
@@ -27,7 +30,7 @@ const schema = zod.object({
   bio: zod.string().min(3),
   phone_no: zod.string().min(10),
   homepage_coverimg: zod.any(),
-  homepage_logo: zod.any(),
+  homepage_logo: zod.any()
 });
 
 const resolver = zodResolver(schema);
@@ -38,30 +41,51 @@ export const loader = async({request}: LoaderFunctionArgs) => {
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
+
+  const url_id = "740e9b83-6c7a-40fc-81a3-dec2d7103e10";
+
+  const { supabaseClient } = createSupabaseServerClient(request);
+
   const { receivedValues, errors, data } = await getValidatedFormData<
     zod.infer<typeof schema>
   >(request, resolver);
   if (errors) {
+    console.log("Hello HP:",errors);
     return json({ errors, receivedValues });
   }
-  const { username, storeName, bio } = data;
-  const { supabaseClient, headers } = createSupabaseServerClient(request);
+  const { username, storeName, bio, phone_no, homepage_coverimg, homepage_logo } = data;
+  const [coverImgResult, logoResult] = await Promise.all([
+    supabaseClient.storage.from("services").upload(`${url_id}/coverimg_${Date.now()}`, homepage_coverimg),
+    supabaseClient.storage.from("services").upload(`${url_id}/logo_${Date.now()}`, homepage_logo)
+  ]);
+  if (coverImgResult.error) {
+    throw coverImgResult.error;
+  }
+  
+  if (logoResult.error) {
+    throw logoResult.error;
+  }
+
   const response = await supabaseClient.from("url_details").upsert(
     {
-      username,
+      username: username,
       store_name: storeName,
       description: bio || "",
-      url_id: "740e9b83-6c7a-40fc-81a3-dec2d7103e10",
+      phone_no:phone_no,
+      url_id: url_id,
       created_at: new Date().toISOString(),
+      homepage_coverimg: coverImgResult.data.path,
+      homepage_logo: logoResult.data.path,
     },
     { onConflict: "url_id" }
   );
 
   if (response.error) {
-    return json({ error: response.error.message }, { status: 500, headers });
+    // console.log("Hello HP:",response.error);
+    return json({ error: response.error.message }, { status: 500 });
   }
 
-  return json({ message: "Details added successfully" }, { headers });
+  return json({ message: "Details added successfully" });
 };
 
 
@@ -70,13 +94,16 @@ export default function Details() {
 
   const {formState, watch, handleSubmit, register, control } = useRemixForm<
     zod.infer<typeof schema>
-  >({ resolver, defaultValues: {
+  >({ resolver:zodResolver(schema),
+    submitConfig: { encType: "multipart/form-data" },
+    defaultValues: {
     username: storeDetails[0].username || "",
     storeName: storeDetails[0].store_name || "",
     bio: storeDetails[0].description || "",
   } });
 
   const actionData = useActionData<typeof action>();
+  // console.log(actionData);
 
   React.useEffect(() => {
     if (actionData) {
@@ -112,7 +139,7 @@ export default function Details() {
               className="w-full"
               {...register("username")}
               isInvalid={!!errors.username}
-              errorMessage={errors.username?.message || ""}
+              errorMessage={errors.username?.message?.toString() || ""}
             />
             <Input
               type="text"
@@ -160,27 +187,31 @@ export default function Details() {
                           onChange={(event) => {
                             console.log(event.target.files);
                             onChange(event.target.files?.[0]);
-                          }}
-                          type="file"
-                          id="home_coverimg"
-                        />
+                            }}
+                            type="file"
+                            id="home_coverimg"
+                            />
+                        
                       );
                     }}
                   />
-
+                  {/* {errors.homepage_coverimg?.message && <span className="text-red-500 text-sm">{String(errors.homepage_coverimg.message)}</span>} */}
                   <Spacer y={1} />
                   <div className="mt-4">
                     <p className="text-sm  mb-2">Image Preview:</p>
-                    <Image
-                      width={300}
-                      height={100}
-                      alt="HomePage cover Preview"
-                      src={
-                        watch("homepage_coverimg") &&
-                        URL.createObjectURL(watch("homepage_coverimg"))
-                      }
-                      className="border border-gray-300 rounded-2xl overflow-hidden w-[300px] h-[200px] object-cover"
-                    />
+                    <div className=" bg-gray-300  w-[300px] h-[200px] rounded-2xl">
+                      <Image
+                        width={300}
+                        height={100}
+                        alt="HomePage cover Preview"
+                        src={
+                          watch("homepage_coverimg") &&
+                          URL.createObjectURL(watch("homepage_coverimg"))
+                        }
+                        className="border border-gray-300 rounded-2xl overflow-hidden w-[300px] h-[200px] object-cover"
+                      />
+
+                    </div>
                   </div>
                 </div>
             <div>
@@ -210,10 +241,12 @@ export default function Details() {
                       );
                     }}
                   />
-
+                  {/* {errors.homepage_logo?.message && <span className="text-red-500 text-sm">{String(errors.homepage_logo.message)}</span>} */}
                   <Spacer y={1} />
                   <div className="mt-4">
                     <p className="text-sm  mb-2">Image Preview:</p>
+                    <div className=" bg-gray-300 w-20 h-20 rounded-full">
+
                     <Image
                       // width={100}
                       // height={100}
@@ -224,6 +257,7 @@ export default function Details() {
                       }
                       className="border border-gray-300 rounded-full overflow-hidden w-20 h-20 object-cover"
                     />
+                    </div>
                   </div>
                 </div>
             <div className="flex justify-center">
