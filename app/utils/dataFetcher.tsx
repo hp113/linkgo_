@@ -1,4 +1,5 @@
 
+import { json } from "@remix-run/node";
 import { createSupabaseServerClient } from "../supabase.server";
 import { Database } from "../types/supabase";
 
@@ -37,6 +38,21 @@ export const fetchUrlDetails = async (request: Request, url_id?: string) => {
     if (!data) {
       return [];
     }
+    const dataWithPublicUrl = data.map((item) => {
+      const { data: publicUrlData } = supabaseClient.storage
+        .from("services")
+        .getPublicUrl(item.service_logo);
   
-    return data;
+      if (!publicUrlData) {
+        console.error('Error fetching public URL for', item.service_logo);
+        throw new Error('Error fetching public URL');
+      }
+  
+      return {
+        ...item,
+        service_logo: publicUrlData.publicUrl,
+      };
+    });
+  
+    return dataWithPublicUrl;
   };

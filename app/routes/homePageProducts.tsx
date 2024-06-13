@@ -14,7 +14,7 @@ interface HomePageProductsProps {
 
 export default function HomeProducts({ productDetails }: HomePageProductsProps) {
   
-  // console.log(productDetails);
+  console.log(productDetails);
   return (
     <div className="gap-2 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full mx-4">
       {productDetails.map((product) => (
@@ -31,7 +31,7 @@ export default function HomeProducts({ productDetails }: HomePageProductsProps) 
               // width={70}
               //   height={50}
               alt={product.service_name}
-              className=" objec-cover w-20 h-20"
+              className=" object-cover w-20 h-20"
               src={product.service_logo}
             />
             <div>

@@ -153,6 +153,7 @@ export default function Products() {
   const actionData = useActionData<typeof action>();
   const { errors } = formState;
   console.log(formState);
+  console.log("this is loader data:",loaderData);
 
   useEffect(() => {
     if (actionData) {

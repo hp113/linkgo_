@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Button, Card, CardBody, Input, Textarea } from "@nextui-org/react";
+import { Button, Card, CardBody, Image, Input, Spacer, Textarea } from "@nextui-org/react";
 import {
   ActionFunctionArgs,
   LoaderFunctionArgs,
@@ -19,11 +19,15 @@ import React from "react";
 import zod from "zod";
 import { createSupabaseServerClient } from "~/supabase.server";
 import { fetchUrlDetails } from "~/utils/dataFetcher";
+import { Controller } from "react-hook-form";
 
 const schema = zod.object({
   username: zod.string().min(3),
   storeName: zod.string().min(3),
   bio: zod.string().min(3),
+  phone_no: zod.string().min(10),
+  homepage_coverimg: zod.any(),
+  homepage_logo: zod.any(),
 });
 
 const resolver = zodResolver(schema);
@@ -64,7 +68,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 export default function Details() {
   const {storeDetails} = useLoaderData<typeof loader>();
 
-  const { formState, handleSubmit, register } = useRemixForm<
+  const {formState, watch, handleSubmit, register, control } = useRemixForm<
     zod.infer<typeof schema>
   >({ resolver, defaultValues: {
     username: storeDetails[0].username || "",
@@ -119,6 +123,15 @@ export default function Details() {
               isInvalid={!!errors.storeName}
               errorMessage={errors.storeName?.message || ""}
             />
+            <Input
+              type="text"
+              label="Phone Name"
+              placeholder="Enter Phone Number"
+              className="w-full"
+              {...register("phone_no")}
+              isInvalid={!!errors.phone_no}
+              errorMessage={errors.phone_no?.message || ""}
+            />
             <Textarea
               label="Bio"
               placeholder="Enter your description"
@@ -127,6 +140,92 @@ export default function Details() {
               isInvalid={!!errors.bio}
               errorMessage={errors.bio?.message || ""}
             />
+            <div>
+                  <label
+                    htmlFor="home_coverimg"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Cover image
+                  </label>
+                  <Spacer y={0.5} />
+                  <Controller
+                    control={control}
+                    name={"homepage_coverimg"}
+                    rules={{ required: "Service image is required" }}
+                    render={({ field: { value, onChange, ...field } }) => {
+                      return (
+                        <input
+                          {...field}
+                          value={value?.fileName}
+                          onChange={(event) => {
+                            console.log(event.target.files);
+                            onChange(event.target.files?.[0]);
+                          }}
+                          type="file"
+                          id="home_coverimg"
+                        />
+                      );
+                    }}
+                  />
+
+                  <Spacer y={1} />
+                  <div className="mt-4">
+                    <p className="text-sm  mb-2">Image Preview:</p>
+                    <Image
+                      width={300}
+                      height={100}
+                      alt="HomePage cover Preview"
+                      src={
+                        watch("homepage_coverimg") &&
+                        URL.createObjectURL(watch("homepage_coverimg"))
+                      }
+                      className="border border-gray-300 rounded-2xl overflow-hidden w-[300px] h-[200px] object-cover"
+                    />
+                  </div>
+                </div>
+            <div>
+                  <label
+                    htmlFor="home_logo"
+                    className="block text-sm font-medium text-gray-700"
+                  >
+                    Company logo
+                  </label>
+                  <Spacer y={0.5} />
+                  <Controller
+                    control={control}
+                    name={"homepage_logo"}
+                    rules={{ required: "Service image is required" }}
+                    render={({ field: { value, onChange, ...field } }) => {
+                      return (
+                        <input
+                          {...field}
+                          value={value?.fileName}
+                          onChange={(event) => {
+                            console.log(event.target.files);
+                            onChange(event.target.files?.[0]);
+                          }}
+                          type="file"
+                          id="home_logo"
+                        />
+                      );
+                    }}
+                  />
+
+                  <Spacer y={1} />
+                  <div className="mt-4">
+                    <p className="text-sm  mb-2">Image Preview:</p>
+                    <Image
+                      // width={100}
+                      // height={100}
+                      alt="Service Preview"
+                      src={
+                        watch("homepage_logo") &&
+                        URL.createObjectURL(watch("homepage_logo"))
+                      }
+                      className="border border-gray-300 rounded-full overflow-hidden w-20 h-20 object-cover"
+                    />
+                  </div>
+                </div>
             <div className="flex justify-center">
               <Button type="submit" color="primary" className="w-auto px-6">
                 Submit
