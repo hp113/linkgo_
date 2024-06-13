@@ -16,9 +16,9 @@ import {
 import { getValidatedFormData, useRemixForm } from "remix-hook-form";
 import { toast } from "sonner";
 import React from "react";
-import { fetchUrlDetails } from "~/dataFetchingHomePage";
 import zod from "zod";
 import { createSupabaseServerClient } from "~/supabase.server";
+import { fetchUrlDetails } from "~/utils/dataFetcher";
 
 const schema = zod.object({
   username: zod.string().min(3),

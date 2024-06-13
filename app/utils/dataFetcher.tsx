@@ -1,5 +1,6 @@
 
-import { createSupabaseServerClient } from "./supabase.server";
+import { createSupabaseServerClient } from "../supabase.server";
+import { Database } from "../types/supabase";
 
 export const fetchUrlDetails = async (request: Request, url_id?: string) => {
     const { supabaseClient } = createSupabaseServerClient(request);
@@ -22,16 +23,9 @@ export const fetchUrlDetails = async (request: Request, url_id?: string) => {
     return data;
   };
   
-  export interface Product {
-    id: number;
-    service_name: string;
-    service_price: number;
-    service_logo: string;
-    url_id: string;
-    created_at: string;
-  }
+  type ProductRow = Database['public']['Tables']['products']['Row'];
   // Function to fetch data from products table
-  export const fetchProducts = async (request: Request): Promise<Product[]> => {
+  export const fetchProducts = async (request: Request): Promise<ProductRow[]> => {
     const { supabaseClient } = createSupabaseServerClient(request);
     const { data, error } = await supabaseClient.from('products').select('*');
   

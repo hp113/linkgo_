@@ -1,7 +1,4 @@
 import { Card, CardBody, Image } from "@nextui-org/react";
-import { LoaderFunction, json } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
-import { fetchProducts } from "~/dataFetchingHomePage";
 
 
 interface Product {

@@ -9,7 +9,7 @@ import { Link, useLoaderData } from "@remix-run/react";
 import { FaWhatsapp } from "react-icons/fa6";
 import HomeProducts from "./homePageProducts";
 import { LoaderFunctionArgs, json } from "@remix-run/node";
-import { fetchProducts, fetchUrlDetails } from "~/dataFetchingHomePage";
+import { fetchProducts, fetchUrlDetails } from "~/utils/dataFetcher";
 
 export const loader = async ({request}:LoaderFunctionArgs) => {
   const storeDetails = await fetchUrlDetails(request, '740e9b83-6c7a-40fc-81a3-dec2d7103e10');
