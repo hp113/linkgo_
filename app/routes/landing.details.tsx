@@ -41,37 +41,70 @@ export const loader = async({request}: LoaderFunctionArgs) => {
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-
-  const url_id = "740e9b83-6c7a-40fc-81a3-dec2d7103e10";
-
   const { supabaseClient } = createSupabaseServerClient(request);
 
-  const { receivedValues, errors, data } = await getValidatedFormData<
-    zod.infer<typeof schema>
-  >(request, resolver);
-  if (errors) {
-    console.log("Hello HP:",errors);
-    return json({ errors, receivedValues });
+  // Parse the incoming form data
+  const formData = await unstable_parseMultipartFormData(
+    request,
+    unstable_createMemoryUploadHandler()
+  );
+
+  // Extract data from formData
+  const receivedValues = {
+    username: formData.get("username"),
+    storeName: formData.get("storeName"),
+    bio: formData.get("bio"),
+    phone_no: formData.get("phone_no"),
+    homepage_coverimg: formData.get("homepage_coverimg"),
+    homepage_logo: formData.get("homepage_logo"),
+  };
+
+  // Validate data using Zod
+  const parsedData = schema.safeParse(receivedValues);
+  if (!parsedData.success) {
+    const errors = parsedData.error.format();
+    // console.log("Validation errors:", errors);
+    return json({ errors });
   }
-  const { username, storeName, bio, phone_no, homepage_coverimg, homepage_logo } = data;
+
+  const data = parsedData.data;
+  let { username, storeName, bio, phone_no, homepage_coverimg, homepage_logo } = data;
+
+  username = username.replace(/"/g, '').trim();
+  storeName = storeName.replace(/"/g, '').trim();
+  bio = bio ? bio.replace(/"/g, '').trim() : "";
+  phone_no = phone_no.replace(/"/g, '').trim();
+  // Ensure homepage_coverimg and homepage_logo are File objects
+  if (!(homepage_coverimg instanceof File) || !(homepage_logo instanceof File)) {
+    return json({ error: "Invalid file upload" }, { status: 400 });
+  }
+
+  // console.log("Cover Image - Size:", homepage_coverimg.size);
+  // console.log("Cover Image - Type:", homepage_coverimg.type);
+
+  // Upload files to Supabase
+  const url_id = "740e9b83-6c7a-40fc-81a3-dec2d7103e10";
   const [coverImgResult, logoResult] = await Promise.all([
     supabaseClient.storage.from("services").upload(`${url_id}/coverimg_${Date.now()}`, homepage_coverimg),
     supabaseClient.storage.from("services").upload(`${url_id}/logo_${Date.now()}`, homepage_logo)
   ]);
+
   if (coverImgResult.error) {
     throw coverImgResult.error;
   }
-  
+
   if (logoResult.error) {
     throw logoResult.error;
   }
 
+
+  // Upsert data into Supabase table
   const response = await supabaseClient.from("url_details").upsert(
     {
       username: username,
       store_name: storeName,
       description: bio || "",
-      phone_no:phone_no,
+      phone_no: phone_no,
       url_id: url_id,
       created_at: new Date().toISOString(),
       homepage_coverimg: coverImgResult.data.path,
@@ -81,7 +114,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   );
 
   if (response.error) {
-    // console.log("Hello HP:",response.error);
     return json({ error: response.error.message }, { status: 500 });
   }
 
@@ -97,10 +129,12 @@ export default function Details() {
   >({ resolver:zodResolver(schema),
     submitConfig: { encType: "multipart/form-data" },
     defaultValues: {
-    username: storeDetails[0].username || "",
-    storeName: storeDetails[0].store_name || "",
-    bio: storeDetails[0].description || "",
-  } });
+    username: storeDetails[0]?.username || "",
+    storeName: storeDetails[0]?.store_name || "",
+    phone_no: storeDetails[0]?.phone_no || "",
+    bio: storeDetails[0]?.description || "",
+  } 
+});
 
   const actionData = useActionData<typeof action>();
   // console.log(actionData);
@@ -152,7 +186,7 @@ export default function Details() {
             />
             <Input
               type="text"
-              label="Phone Name"
+              label="Phone Number"
               placeholder="Enter Phone Number"
               className="w-full"
               {...register("phone_no")}

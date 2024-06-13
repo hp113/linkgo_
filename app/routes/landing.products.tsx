@@ -94,6 +94,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ errors }, { status: 422 });
     }
     const { serviceName, servicePrice, serviceImage } = data;
+    
 
     const { data: uploadedData, error } = await supabaseClient.storage
       .from("services")
@@ -152,8 +153,8 @@ export default function Products() {
 
   const actionData = useActionData<typeof action>();
   const { errors } = formState;
-  console.log(formState);
-  console.log("this is loader data:",loaderData);
+  // console.log(formState);
+  // console.log("this is loader data:",loaderData);
 
   useEffect(() => {
     if (actionData) {
@@ -258,7 +259,7 @@ export default function Products() {
                           {...field}
                           value={value?.fileName}
                           onChange={(event) => {
-                            console.log(event.target.files);
+                            // console.log(event.target.files);
                             onChange(event.target.files?.[0]);
                           }}
                           type="file"

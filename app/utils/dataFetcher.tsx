@@ -4,8 +4,8 @@ import { createSupabaseServerClient } from "../supabase.server";
 import { Database } from "../types/supabase";
 
 export const fetchUrlDetails = async (request: Request, url_id?: string) => {
-    const { supabaseClient } = createSupabaseServerClient(request);
-    let query = supabaseClient.from('url_details').select('*');
+  const { supabaseClient } = createSupabaseServerClient(request);
+  let query = supabaseClient.from('url_details').select('*');
 
   // Conditionally modify the query based on the presence of url_id
   if (typeof url_id === 'string') {
@@ -14,15 +14,41 @@ export const fetchUrlDetails = async (request: Request, url_id?: string) => {
 
   // Execute the modified query
   const { data, error } = await query;
-  
-  
-    if (error) {
-      console.error('Error fetching URL details:', error);
-      throw new Error('Error fetching URL details');
-    }
-  
-    return data;
-  };
+
+  if (error) {
+    console.error('Error fetching URL details:', error);
+    throw new Error('Error fetching URL details');
+  }
+
+  if (!data) {
+    return [];
+  }
+
+  const dataWithPublicUrl = await Promise.all(
+    data.map(async (item) => {
+      const coverImgPublicUrl = supabaseClient.storage
+        .from("services")
+        .getPublicUrl(item.homepage_coverimg);
+      const logoPublicUrl = supabaseClient.storage
+        .from("services")
+        .getPublicUrl(item.homepage_logo);
+
+      if (!coverImgPublicUrl.data || !logoPublicUrl.data) {
+        console.error('Error fetching public URL for', item.homepage_coverimg, item.homepage_logo);
+        throw new Error('Error fetching public URL');
+      }
+
+      return {
+        ...item,
+        homepage_coverimg: coverImgPublicUrl.data.publicUrl,
+        homepage_logo: logoPublicUrl.data.publicUrl,
+      };
+    })
+  );
+
+  return dataWithPublicUrl;
+};
+
   
   type ProductRow = Database['public']['Tables']['products']['Row'];
   // Function to fetch data from products table
