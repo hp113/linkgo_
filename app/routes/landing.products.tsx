@@ -38,24 +38,17 @@ const ACCEPTED_IMAGE_TYPES = [
 ];
 
 const AddProductSchema = zod.object({
-  _action: zod.literal("add"),
+  _action: zod.string(),
   serviceName: zod.string().min(3),
-  servicePrice: zod.number().min(1, "Service price must be at least 1"),
+  servicePrice: zod.coerce.number().min(1, "Service price must be at least 1"),
   serviceImage: zod.any(),
 });
 const DeleteProductSchema = zod.object({
-  _action: zod.literal("delete"),
+  _action: zod.string(),
   serviceId: zod.string(),
 });
 
-const schema = zod.discriminatedUnion("_action", [
-  AddProductSchema,
-  DeleteProductSchema,
-]);
-const resolver = zodResolver(schema);
-
 export const action = async ({ request }: ActionFunctionArgs) => {
-  console.log("Request", request.headers.get("content-type"));
   const formData = await unstable_parseMultipartFormData(
     request,
     unstable_createMemoryUploadHandler({
@@ -66,19 +59,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     })
   );
   const url_id = "740e9b83-6c7a-40fc-81a3-dec2d7103e10";
-  const { errors, data } = await validateFormData<zod.infer<typeof schema>>(
-    formData,
-    resolver
-  );
 
-  if (errors) {
-    return json({ errors }, { status: 422 });
-  }
-
-  const { _action } = data;
   const { supabaseClient } = createSupabaseServerClient(request);
+  const _action = formData.get("_action");
 
   if (_action === "delete") {
+    const { errors, data } = await validateFormData<
+      zod.infer<typeof DeleteProductSchema>
+    >(formData, zodResolver(DeleteProductSchema));
+    if (errors) {
+      return json({ errors }, { status: 422 });
+    }
     const { serviceId } = data;
     const { error } = await supabaseClient
       .from("products")
@@ -95,7 +86,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
 
     return json({ message: "Product deleted successfully" });
-  } else if (_action === "add") {
+  } else if (_action === '"add"') {
+    const { errors, data } = await validateFormData<
+      zod.infer<typeof AddProductSchema>
+    >(formData, zodResolver(AddProductSchema));
+    if (errors) {
+      return json({ errors }, { status: 422 });
+    }
     const { serviceName, servicePrice, serviceImage } = data;
 
     const { data: uploadedData, error } = await supabaseClient.storage
@@ -107,7 +104,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const { error: insertError } = await supabaseClient
       .from("products")
       .insert({
-        service_name: serviceName,
+        service_name: serviceName.slice(1, -1),
         service_price: servicePrice,
         service_logo: uploadedData.path,
         url_id,
@@ -147,7 +144,7 @@ export default function Products() {
   const { formState, watch, handleSubmit, register, control } = useRemixForm<
     zod.infer<typeof AddProductSchema>
   >({
-    resolver,
+    resolver: zodResolver(AddProductSchema),
     submitConfig: { encType: "multipart/form-data" },
   });
 
@@ -155,6 +152,7 @@ export default function Products() {
 
   const actionData = useActionData<typeof action>();
   const { errors } = formState;
+  console.log(formState);
 
   useEffect(() => {
     if (actionData) {
@@ -223,7 +221,7 @@ export default function Products() {
               {/* {JSON.stringify(errors)} */}
               <ModalBody>
                 <Input
-                  {...register("serviceName")}
+                  {...register("serviceName", {})}
                   isInvalid={!!errors.serviceName}
                   errorMessage={errors.serviceName?.message || ""}
                   label="Service name"
@@ -231,7 +229,9 @@ export default function Products() {
                   variant="bordered"
                 />
                 <Input
-                  {...register("servicePrice")}
+                  {...register("servicePrice", {
+                    valueAsNumber: true,
+                  })}
                   isInvalid={!!errors.servicePrice}
                   errorMessage={errors.servicePrice?.message || ""}
                   type="number"
@@ -282,12 +282,18 @@ export default function Products() {
                     />
                   </div>
                 </div>
+                <input
+                  type="hidden"
+                  {...register("_action", {
+                    value: "add",
+                  })}
+                />
               </ModalBody>
               <ModalFooter>
                 <Button color="danger" variant="flat" onPress={onClose}>
                   Close
                 </Button>
-                <Button type="submit" color="primary" onPress={onClose}>
+                <Button color="primary" type="submit">
                   Add Product
                 </Button>
               </ModalFooter>
