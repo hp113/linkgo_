@@ -1,4 +1,5 @@
 import {
+  Link,
   Table,
   TableBody,
   TableCell,
@@ -56,7 +57,7 @@ const Dashboard = () => {
                 <TableRow key={item.id}>
                     <TableCell>{item.url}</TableCell>
                     <TableCell>{item.store_type}</TableCell>
-                    <TableCell>{item.id}</TableCell>
+                    <TableCell><Link isExternal href="/landing/details" showAnchorIcon>{item.id}</Link></TableCell>
                 </TableRow>
             )}
         </TableBody>

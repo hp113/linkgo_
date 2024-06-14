@@ -258,6 +258,7 @@ export default function Products() {
                         <input
                           {...field}
                           value={value?.fileName}
+                          accept="image/*"
                           onChange={(event) => {
                             // console.log(event.target.files);
                             onChange(event.target.files?.[0]);

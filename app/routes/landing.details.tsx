@@ -15,13 +15,12 @@ import {
   useLoaderData,
   useRouteError,
 } from "@remix-run/react";
-import { getValidatedFormData, useRemixForm } from "remix-hook-form";
+import { useRemixForm } from "remix-hook-form";
 import { toast } from "sonner";
 import React from "react";
 import zod from "zod";
 import { createSupabaseServerClient } from "~/supabase.server";
 import { Controller } from "react-hook-form";
-import { c } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
 import { fetchUrlDetails } from "~/utils/dataFetcher";
 
 const schema = zod.object({
@@ -218,6 +217,7 @@ export default function Details() {
                         <input
                           {...field}
                           value={value?.fileName}
+                          accept="image/*"
                           onChange={(event) => {
                             console.log(event.target.files);
                             onChange(event.target.files?.[0]);
@@ -265,6 +265,7 @@ export default function Details() {
                         <input
                           {...field}
                           value={value?.fileName}
+                          accept="image/*"
                           onChange={(event) => {
                             console.log(event.target.files);
                             onChange(event.target.files?.[0]);
