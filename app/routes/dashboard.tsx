@@ -54,9 +54,9 @@ const Dashboard = () => {
         <TableBody items={data.urls}>
             {(item: any) => (
                 <TableRow key={item.id}>
-                    <TableCell>{item.id}</TableCell>
                     <TableCell>{item.url}</TableCell>
                     <TableCell>{item.store_type}</TableCell>
+                    <TableCell>{item.id}</TableCell>
                 </TableRow>
             )}
         </TableBody>
