@@ -1,28 +1,66 @@
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableColumn,
+  TableHeader,
+  TableRow,
+} from "@nextui-org/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { Form, useLoaderData } from "@remix-run/react";
 import { createSupabaseServerClient } from "~/supabase.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { supabaseClient } = createSupabaseServerClient(request);
+
+  // Fetch authenticated user
   const {
     data: { user },
+    error: userError,
   } = await supabaseClient.auth.getUser();
-  if (!user) {
+  if (userError || !user) {
+    // Handle error or redirect if user is not authenticated
     return redirect("/");
   }
 
-  console.log("User:", user); 
-  const id = user.id;
-  const datafromsupabase= await supabaseClient.from('urls').select('*').eq('user_id', id);
-  return new Response(null);
+  // Fetch URLs associated with the user
+  const { data: urls, error: fetchError } = await supabaseClient
+    .from("urls")
+    .select("*")
+    .eq("user_id", user.id);
+
+  if (fetchError) {
+    // Handle fetch error appropriately
+    console.error("Error fetching URLs:", fetchError);
+    return new Response("Error fetching URLs", { status: 400 });
+  }
+  
+  // Return JSON response with table data
+  return json({ urls});
 };
 
 const Dashboard = () => {
-  const { user } = useLoaderData<typeof loader>();
+  const data = useLoaderData<typeof loader>();
+  console.log("This is data", typeof data);
   return (
     <div>
-      <h1>Dashboard</h1>
+      <Table aria-label="Example table with dynamic content">
+        <TableHeader>
+        <TableColumn>NAME</TableColumn>
+        <TableColumn>STORE TYPE</TableColumn>
+        <TableColumn>ID</TableColumn>
+        </TableHeader>
+        <TableBody items={[data]}>
+            {(item) => (
+              <TableRow key={item.id}>
+                <TableCell>{item.id}</TableCell>
+                <TableCell>{item.url}</TableCell>
+                <TableCell>{item.store_type}</TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+      </Table>
 
       <Form action="/sign-out" method="post">
         <button type="submit">Sign Out</button>
