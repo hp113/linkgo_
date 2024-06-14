@@ -1,12 +1,11 @@
-import type { ActionFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
-
+// routes/signout.tsx
+import { ActionFunctionArgs, redirect } from "@remix-run/node";
 import { createSupabaseServerClient } from "~/supabase.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { supabaseClient, headers } = createSupabaseServerClient(request);
 
-  // check if user is logged in
+  // Check if user is logged in
   const {
     data: { user },
   } = await supabaseClient.auth.getUser();
@@ -14,9 +13,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return redirect("/");
   }
 
-  // sign out
+  // Sign out
   await supabaseClient.auth.signOut();
   return redirect("/", {
     headers,
   });
 };
+
+export default function SignOut() {
+  return (
+    <div>
+      <p>Signing out...</p>
+    </div>
+  );
+}

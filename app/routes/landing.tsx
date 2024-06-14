@@ -1,5 +1,6 @@
 import {
   Avatar,
+  Button,
   Navbar,
   NavbarBrand,
   NavbarContent,
@@ -15,6 +16,7 @@ import { HiOutlineGlobeAlt } from "react-icons/hi";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TbBrandGoogleAnalytics } from "react-icons/tb";
 import { createSupabaseServerClient } from "~/supabase.server";
+import SignOut from "./sign-out";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { supabaseClient } = createSupabaseServerClient(request);
@@ -42,6 +44,11 @@ export default function LandingPage() {
           </p>
         </NavbarBrand>
         <NavbarContent justify="end">
+          <NavbarItem>
+            <form method="post" action="/sign-out">
+              <Button type="submit">Sign Out</Button>
+            </form>
+          </NavbarItem>
           <NavbarItem>
             <Avatar src={user.avatar_url ?? ""} size="lg" />
           </NavbarItem>
