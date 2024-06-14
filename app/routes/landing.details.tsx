@@ -36,7 +36,7 @@ const schema = zod.object({
 const resolver = zodResolver(schema);
 
 export const loader = async({request}: LoaderFunctionArgs) => {
-  const storeDetails = await fetchUrlDetails(request, '740e9b83-6c7a-40fc-81a3-dec2d7103e10');
+  const storeDetails = await fetchUrlDetails(request, 'hariprasad');
   return json({storeDetails});
 }
 
@@ -129,10 +129,10 @@ export default function Details() {
   >({ resolver:zodResolver(schema),
     submitConfig: { encType: "multipart/form-data" },
     defaultValues: {
-    username: storeDetails[0]?.username || "",
-    storeName: storeDetails[0]?.store_name || "",
-    phone_no: storeDetails[0]?.phone_no || "",
-    bio: storeDetails[0]?.description || "",
+    username: storeDetails!.username || "",
+    storeName: storeDetails!.store_name || "",
+    phone_no: storeDetails!.phone_no || "",
+    bio: storeDetails!.description || "",
   } 
 });
 

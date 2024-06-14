@@ -3,17 +3,17 @@ import { json } from "@remix-run/node";
 import { createSupabaseServerClient } from "../supabase.server";
 import { Database } from "../types/supabase";
 
-export const fetchUrlDetails = async (request: Request, url_id?: string) => {
+export const fetchUrlDetails = async (request: Request, username: string) => {
   const { supabaseClient } = createSupabaseServerClient(request);
-  let query = supabaseClient.from('url_details').select('*');
+  const {data, error}  = await supabaseClient.from('url_details').select('*').eq('username', username).single();
 
   // Conditionally modify the query based on the presence of url_id
-  if (typeof url_id === 'string') {
-    query = query.eq('url_id', url_id);
-  }
+  // if (typeof url_id === 'string') {
+  //   query = query.eq('url_id', url_id);
+  // }
 
-  // Execute the modified query
-  const { data, error } = await query;
+  // // Execute the modified query
+  // const { data, error } = await query;
 
   if (error) {
     console.error('Error fetching URL details:', error);
@@ -21,32 +21,30 @@ export const fetchUrlDetails = async (request: Request, url_id?: string) => {
   }
 
   if (!data) {
-    return [];
+    return null;
   }
 
-  const dataWithPublicUrl = await Promise.all(
-    data.map(async (item) => {
-      const coverImgPublicUrl = supabaseClient.storage
-        .from("services")
-        .getPublicUrl(item.homepage_coverimg);
-      const logoPublicUrl = supabaseClient.storage
-        .from("services")
-        .getPublicUrl(item.homepage_logo);
+  const coverImgPublicUrl = supabaseClient.storage
+    .from("services")
+    .getPublicUrl(data.homepage_coverimg);
 
-      if (!coverImgPublicUrl.data || !logoPublicUrl.data) {
-        console.error('Error fetching public URL for', item.homepage_coverimg, item.homepage_logo);
-        throw new Error('Error fetching public URL');
-      }
+  const logoPublicUrl = supabaseClient.storage
+    .from("services")
+    .getPublicUrl(data.homepage_logo);
 
-      return {
-        ...item,
-        homepage_coverimg: coverImgPublicUrl.data.publicUrl,
-        homepage_logo: logoPublicUrl.data.publicUrl,
-      };
-    })
-  );
+  if (!coverImgPublicUrl.data || !logoPublicUrl.data) {
+    console.error('Error fetching public URL for', data.homepage_coverimg, data.homepage_logo);
+    throw new Error('Error fetching public URL');
+  }
 
-  return dataWithPublicUrl;
+  // Return the modified data object
+  return {
+    ...data,
+    homepage_coverimg: coverImgPublicUrl.data.publicUrl,
+    homepage_logo: logoPublicUrl.data.publicUrl,
+  };
+
+  // return dataWithPublicUrl;
 };
 
   
