@@ -28,6 +28,11 @@ export default function HomePage() {
         </NavbarBrand>
         <NavbarContent justify="end">
           <NavbarItem>
+          <form method="post" action="/sign-out">
+              <Button type="submit">Sign Out</Button>
+            </form>
+          </NavbarItem>
+          <NavbarItem>
             <Button
               as={Link}
               className="text-white bg-black"

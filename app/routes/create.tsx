@@ -54,9 +54,12 @@ export default function Create() {
     <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start h-screen w-screen bg-gradient-to-r from-blue-100 to-blue-300 p-4">
       {/* {JSON.stringify(actionData)} */}
       {/* <div className="flex-1">{searchParams.get("store_name")}</div> */}
+      <form method="post" action="/sign-out" className="absolute top-0 right-0">
+              <Button type="submit">Sign Out</Button>
+            </form>
       <div className="bg-white p-6 sm:p-10 rounded-lg shadow-lg w-full max-w-lg mx-auto">
         <Form method="post" className="w-full flex flex-col">
-          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center mb-4">  
             What is the type of your buisness?
           </h1>
           <p className="text-gray-700 text-center mb-6">
