@@ -33,7 +33,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   if (fetchError) {
     // Handle fetch error appropriately
     console.error("Error fetching URLs:", fetchError);
-    return new Response("Error fetching URLs", { status: 400 });
+    return new Response("Error fetching URLs", { status: 500 });
   }
   
   // Return JSON response with table data
@@ -42,7 +42,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Dashboard = () => {
   const data = useLoaderData<typeof loader>();
-  console.log("This is data", typeof data);
+  console.log("This is data", data);
   return (
     <div>
       <Table aria-label="Example table with dynamic content">
@@ -51,15 +51,15 @@ const Dashboard = () => {
         <TableColumn>STORE TYPE</TableColumn>
         <TableColumn>ID</TableColumn>
         </TableHeader>
-        <TableBody items={[data]}>
-            {(item) => (
-              <TableRow key={item.id}>
-                <TableCell>{item.id}</TableCell>
-                <TableCell>{item.url}</TableCell>
-                <TableCell>{item.store_type}</TableCell>
-              </TableRow>
+        <TableBody items={data.urls}>
+            {(item: any) => (
+                <TableRow key={item.id}>
+                    <TableCell>{item.id}</TableCell>
+                    <TableCell>{item.url}</TableCell>
+                    <TableCell>{item.store_type}</TableCell>
+                </TableRow>
             )}
-          </TableBody>
+        </TableBody>
       </Table>
 
       <Form action="/sign-out" method="post">
