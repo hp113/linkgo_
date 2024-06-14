@@ -20,9 +20,9 @@ import { toast } from "sonner";
 import React from "react";
 import zod from "zod";
 import { createSupabaseServerClient } from "~/supabase.server";
-import { fetchUrlDetails } from "~/utils/dataFetcher";
 import { Controller } from "react-hook-form";
 import { c } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
+import { fetchUrlDetails } from "~/utils/dataFetcher";
 
 const schema = zod.object({
   username: zod.string().min(3),

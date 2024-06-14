@@ -1,6 +1,6 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { redirect } from "@remix-run/node";
-import { Form } from "@remix-run/react";
+import { Form, useLoaderData } from "@remix-run/react";
 import { createSupabaseServerClient } from "~/supabase.server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -12,10 +12,14 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return redirect("/");
   }
 
+  console.log("User:", user); 
+  const id = user.id;
+  const datafromsupabase= await supabaseClient.from('urls').select('*').eq('user_id', id);
   return new Response(null);
 };
 
 const Dashboard = () => {
+  const { user } = useLoaderData<typeof loader>();
   return (
     <div>
       <h1>Dashboard</h1>
