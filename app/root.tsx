@@ -7,12 +7,13 @@ import {
   ScrollRestoration,
   useLoaderData,
   useNavigate,
+  useNavigation,
   useRevalidator,
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { createSupabaseServerClient } from "./supabase.server";
 
-import { NextUIProvider } from "@nextui-org/react";
+import { NextUIProvider, Progress } from "@nextui-org/react";
 import type { LinksFunction } from "@remix-run/node";
 import { createBrowserClient } from "@supabase/auth-helpers-remix";
 import { getToast } from "remix-toast";
@@ -53,6 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const { state } = useNavigation();
   const { toast } = useLoaderData<typeof loader>();
   // Hook to show the toasts
   useEffect(() => {
@@ -72,7 +74,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Links />
       </head>
       <body>
-        <NextUIProvider navigate={navigate}>{children}</NextUIProvider>
+        <NextUIProvider navigate={navigate}>
+          <Progress
+            isIndeterminate={state === "loading" || state === "submitting"}
+            className="z-50"
+            size="sm"
+          />
+          {children}
+        </NextUIProvider>
         <ScrollRestoration />
         <script
           dangerouslySetInnerHTML={{

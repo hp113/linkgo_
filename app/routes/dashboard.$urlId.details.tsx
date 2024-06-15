@@ -20,6 +20,7 @@ import {
   Form,
   isRouteErrorResponse,
   useLoaderData,
+  useNavigation,
   useRouteError,
 } from "@remix-run/react";
 import { Controller } from "react-hook-form";
@@ -157,6 +158,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 export default function Details() {
   const { store } = useLoaderData<typeof loader>();
   const storeDetails = store?.url_details;
+  const { state } = useNavigation();
 
   const { formState, watch, handleSubmit, register, control } = useRemixForm<
     zod.infer<typeof schema>
@@ -311,7 +313,13 @@ export default function Details() {
               </div>
             </div>
             <div className="flex justify-center">
-              <Button type="submit" color="primary" className="w-auto px-6">
+              <Button
+                type="submit"
+                color="primary"
+                className="w-auto px-6"
+                isLoading={state === "submitting"}
+                isDisabled={!(state === "idle")}
+              >
                 Submit
               </Button>
             </div>

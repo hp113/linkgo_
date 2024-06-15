@@ -1,6 +1,6 @@
 import { Button, RadioGroup } from "@nextui-org/react";
 import { ActionFunctionArgs, LoaderFunctionArgs, json } from "@remix-run/node";
-import { Form, useSearchParams } from "@remix-run/react";
+import { Form, useNavigation, useSearchParams } from "@remix-run/react";
 import {
   jsonWithError,
   redirectWithError,
@@ -65,6 +65,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export default function Create() {
   const [searchParams] = useSearchParams();
+  const { state } = useNavigation();
   return (
     <div className="flex flex-col lg:flex-row items-center justify-center lg:justify-start h-screen w-screen bg-gradient-to-r from-blue-100 to-blue-300 p-4">
       {/* {JSON.stringify(actionData)} */}
@@ -108,6 +109,8 @@ export default function Create() {
             color="primary"
             type="submit"
             className="mx-auto mt-6"
+            isLoading={state === "submitting"}
+            isDisabled={state === "submitting" || state === "loading"}
           >
             Next
           </Button>

@@ -14,7 +14,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     provider: "google",
     options: {
       redirectTo: `${
-        process.env.VERCEL_URL ?? "http://localhost:5173"
+        process.env.VERCEL_URL || "http://localhost:5173"
       }/auth/callback?redirect=${encodeURI(btoa(redirectParam))}`,
     },
   });

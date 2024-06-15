@@ -90,7 +90,7 @@ export default function Index() {
         provider: "google",
         options: {
           redirectTo: `${
-            process.env.BASE_URL
+            process.env.VERCEL_URL ?? "http://localhost:5173"
           }/auth/callback?redirect=${encodeURI(
             "/create?store_name=" + storeName
           )}`,

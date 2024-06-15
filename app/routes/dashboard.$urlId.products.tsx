@@ -67,8 +67,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     unstable_createMemoryUploadHandler({
       maxPartSize: MAX_FILE_SIZE,
       filter(args) {
-        console.log(args);
-        return ACCEPTED_IMAGE_TYPES.includes(args.contentType);
+        return args.name == "serviceImage"
+          ? ACCEPTED_IMAGE_TYPES.includes(args.contentType)
+          : true;
       },
     })
   );
