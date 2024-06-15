@@ -41,7 +41,9 @@ export default function HomeProducts({
             />
             <div>
               <h2 className="text-lg">{product.service_name}</h2>
-              <p className="text-default-500">{product.service_price}</p>
+              <p className="text-green-500 text-medium font-bold">
+                Rs.{product.service_price}
+              </p>
             </div>
           </CardBody>
         </Card>

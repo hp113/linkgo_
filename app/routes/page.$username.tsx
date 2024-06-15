@@ -69,7 +69,7 @@ export default function HomePage() {
         </p>
         <Link
           to={`tel:${storeDetails!.phone_no}`}
-          className="text-green-500 font-bold text-lg"
+          className=" font-bold text-lg"
         >
           {storeDetails!.phone_no}
         </Link>
