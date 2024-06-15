@@ -15,8 +15,10 @@ import { createSupabaseServerClient } from "./supabase.server";
 import { NextUIProvider } from "@nextui-org/react";
 import type { LinksFunction } from "@remix-run/node";
 import { createBrowserClient } from "@supabase/auth-helpers-remix";
-import { Toaster } from "sonner";
+import { getToast } from "remix-toast";
+import { Toaster, toast as notify } from "sonner";
 import stylesheet from "~/tailwind.css?url";
+import { combineHeaders } from "./utils/server";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
@@ -34,14 +36,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const {
     data: { session },
   } = await supabase.supabaseClient.auth.getSession();
+  const { toast, headers } = await getToast(request);
 
   return json(
     {
       env,
       session,
+      toast,
     },
     {
-      headers: supabase.headers,
+      headers: combineHeaders(supabase.headers, headers),
     }
   );
 };
@@ -49,6 +53,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 export function Layout({ children }: { children: React.ReactNode }) {
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const { toast } = useLoaderData<typeof loader>();
+  // Hook to show the toasts
+  useEffect(() => {
+    if (toast?.type === "error") {
+      notify.error(toast.message);
+    }
+    if (toast?.type === "success") {
+      notify.success(toast.message);
+    }
+  }, [toast]);
   return (
     <html lang="en">
       <head>
@@ -68,7 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
         <Scripts />
-        <Toaster position="top-right" richColors />
+        <Toaster position="bottom-right" richColors />
       </body>
     </html>
   );

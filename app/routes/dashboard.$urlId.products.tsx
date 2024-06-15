@@ -20,14 +20,21 @@ import {
   unstable_createMemoryUploadHandler,
   unstable_parseMultipartFormData,
 } from "@remix-run/node";
-import { Form, useActionData, useLoaderData } from "@remix-run/react";
+import {
+  Form,
+  useActionData,
+  useLoaderData,
+  useNavigation,
+} from "@remix-run/react";
 import { useEffect } from "react";
 import { Controller } from "react-hook-form";
 import { TbTrashFilled } from "react-icons/tb";
 import { useRemixForm, validateFormData } from "remix-hook-form";
+import { jsonWithSuccess } from "remix-toast";
 import { toast } from "sonner";
 import zod from "zod";
 import { createSupabaseServerClient } from "~/supabase.server";
+import { getUser } from "~/utils/server";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ACCEPTED_IMAGE_TYPES = [
@@ -48,17 +55,23 @@ const DeleteProductSchema = zod.object({
   serviceId: zod.string(),
 });
 
-export const action = async ({ request }: ActionFunctionArgs) => {
+export const action = async ({ request, params }: ActionFunctionArgs) => {
+  await getUser(request);
+  const { urlId } = params;
+  if (!urlId) {
+    return json({ error: "URL not found" }, { status: 404 });
+  }
+
   const formData = await unstable_parseMultipartFormData(
     request,
     unstable_createMemoryUploadHandler({
-      // maxPartSize: MAX_FILE_SIZE,
-      // filter(args) {
-      //   return ACCEPTED_IMAGE_TYPES.includes(args.contentType);
-      // },
+      maxPartSize: MAX_FILE_SIZE,
+      filter(args) {
+        console.log(args);
+        return ACCEPTED_IMAGE_TYPES.includes(args.contentType);
+      },
     })
   );
-  const url_id = "740e9b83-6c7a-40fc-81a3-dec2d7103e10";
 
   const { supabaseClient } = createSupabaseServerClient(request);
   const _action = formData.get("_action");
@@ -80,12 +93,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
     const { error: deleteImageError } = await supabaseClient.storage
       .from("services")
-      .remove([`${url_id}/${serviceId}`]);
+      .remove([`${urlId}/${serviceId}`]);
     if (deleteImageError) {
       return json({ error: deleteImageError.message }, { status: 500 });
     }
 
-    return json({ message: "Product deleted successfully" });
+    return jsonWithSuccess(
+      { message: "Product deleted successfully" },
+      "Product deleted successfully"
+    );
   } else if (_action === '"add"') {
     const { errors, data } = await validateFormData<
       zod.infer<typeof AddProductSchema>
@@ -94,11 +110,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return json({ errors }, { status: 422 });
     }
     const { serviceName, servicePrice, serviceImage } = data;
-    
 
     const { data: uploadedData, error } = await supabaseClient.storage
       .from("services")
-      .upload(`${url_id}/${Date.now()}`, serviceImage);
+      .upload(`${urlId}/${Date.now()}`, serviceImage);
     if (error) {
       return json({ error: error.message }, { status: 500 });
     }
@@ -108,7 +123,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         service_name: serviceName.slice(1, -1),
         service_price: servicePrice,
         service_logo: uploadedData.path,
-        url_id,
+        url_id: urlId,
       });
     if (insertError) {
       return json({ error: insertError.message }, { status: 500 });
@@ -118,12 +133,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   return json({ error: "Invalid action" }, { status: 400 });
 };
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  await getUser(request);
+  const { urlId } = params;
+  if (!urlId) {
+    throw new Response("URL not found", { status: 404 });
+  }
   const { supabaseClient, headers } = createSupabaseServerClient(request);
   const { data, error } = await supabaseClient
     .from("products")
     .select("*")
-    .eq("url_id", "740e9b83-6c7a-40fc-81a3-dec2d7103e10")
+    .eq("url_id", urlId)
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -141,32 +161,32 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Products() {
-  const { isOpen, onOpen, onOpenChange } = useDisclosure();
-  const { formState, watch, handleSubmit, register, control } = useRemixForm<
-    zod.infer<typeof AddProductSchema>
-  >({
-    resolver: zodResolver(AddProductSchema),
-    submitConfig: { encType: "multipart/form-data" },
-  });
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+  const { formState, watch, handleSubmit, register, control, reset } =
+    useRemixForm<zod.infer<typeof AddProductSchema>>({
+      resolver: zodResolver(AddProductSchema),
+      submitConfig: { encType: "multipart/form-data" },
+    });
 
   const loaderData = useLoaderData<typeof loader>();
 
   const actionData = useActionData<typeof action>();
+  const { state } = useNavigation();
   const { errors } = formState;
-  // console.log(formState);
-  // console.log("this is loader data:",loaderData);
 
   useEffect(() => {
     if (actionData) {
       if ("message" in actionData) {
         toast.success(actionData.message);
+        reset();
+        onClose();
       }
 
       if ("error" in actionData) {
         toast.error(actionData.error);
       }
     }
-  }, [actionData]);
+  }, [actionData, onClose, reset]);
 
   return (
     <div className="flex flex-col items-center">
@@ -260,7 +280,6 @@ export default function Products() {
                           value={value?.fileName}
                           accept="image/*"
                           onChange={(event) => {
-                            // console.log(event.target.files);
                             onChange(event.target.files?.[0]);
                           }}
                           type="file"
@@ -296,7 +315,12 @@ export default function Products() {
                 <Button color="danger" variant="flat" onPress={onClose}>
                   Close
                 </Button>
-                <Button color="primary" type="submit">
+                <Button
+                  color="primary"
+                  type="submit"
+                  isLoading={state == "submitting"}
+                  disabled={state == "submitting"}
+                >
                   Add Product
                 </Button>
               </ModalFooter>

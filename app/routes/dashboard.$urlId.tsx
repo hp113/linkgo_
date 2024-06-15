@@ -1,67 +1,45 @@
+import { Link, Tab, Tabs } from "@nextui-org/react";
+import { LoaderFunctionArgs, json } from "@remix-run/node";
 import {
-  Avatar,
-  Button,
-  Navbar,
-  NavbarBrand,
-  NavbarContent,
-  NavbarItem,
-  Snippet,
-  Tab,
-  Tabs,
-} from "@nextui-org/react";
-import { LoaderFunctionArgs, json, redirect } from "@remix-run/node";
-import { Link, Outlet, useLoaderData, useLocation } from "@remix-run/react";
+  Outlet,
+  Link as RemixLink,
+  useLoaderData,
+  useLocation,
+} from "@remix-run/react";
 
 import { HiOutlineGlobeAlt } from "react-icons/hi";
 import { MdOutlineProductionQuantityLimits } from "react-icons/md";
 import { TbBrandGoogleAnalytics } from "react-icons/tb";
+import { redirectWithError } from "remix-toast";
 import { createSupabaseServerClient } from "~/supabase.server";
-import SignOut from "./sign-out";
+import { getUser } from "~/utils/server";
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
+  await getUser(request);
   const { supabaseClient } = createSupabaseServerClient(request);
-  const userId = (await supabaseClient.auth.getUser()).data.user?.id ?? "";
-  const { data: user, error } = await supabaseClient
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .single();
+  const { urlId } = params;
+  if (!urlId) return redirectWithError("/dashboard", "URL not found");
 
-  if (user === null) return redirect("/");
-  return json({ user });
+  const { data, error: urlError } = await supabaseClient
+    .from("urls")
+    .select()
+    .eq("id", urlId)
+    .single();
+  if (urlError || !data)
+    return redirectWithError("/dashboard", "URL not found");
+  return json({ url: data });
 };
 
 export default function LandingPage() {
-  const { user } = useLoaderData<typeof loader>();
+  const { url } = useLoaderData<typeof loader>();
   const { pathname } = useLocation();
 
   return (
-    <div className="flex w-full flex-col sm:items-center">
-      <Navbar className="bg-gray-200">
-        <NavbarBrand>
-          <p className="font-bold text-inherit sm:text-2xl justify-start">
-            link.go
-          </p>
-        </NavbarBrand>
-        <NavbarContent justify="end">
-          <NavbarItem>
-            <form method="post" action="/sign-out">
-              <Button type="submit">Sign Out</Button>
-            </form>
-          </NavbarItem>
-          <NavbarItem>
-            <Avatar src={user.avatar_url ?? ""} size="lg" />
-          </NavbarItem>
-        </NavbarContent>
-      </Navbar>
-      <div className="w-full px-6 sm:w-fit">
-        <h1 className="font-bold mt-4 sm:text-xl">Hi {user.full_name}!!!</h1>
-
-        <p className="sm:text-lg"> Your link.go URL</p>
-        <Snippet symbol="" variant={undefined} className="mt-2 text-blue-600">
-          <Link to="/success">npm install @nextui-org/react</Link>
-        </Snippet>
-      </div>
+    <div className="flex flex-col">
+      <p className="sm:text-lg"> Your link.go URL</p>
+      <Link isExternal showAnchorIcon href={`/page/${url.url}`}>
+        {url.url}.link.ho
+      </Link>
       <Tabs
         selectedKey={pathname.split("/").at(-1) ?? "details"}
         aria-label="Options"
@@ -71,7 +49,7 @@ export default function LandingPage() {
       >
         <Tab
           key="details"
-          as={Link}
+          as={RemixLink}
           className="sm:text-lg mt-2 sm:mt-4 sm:mb-2"
           //@ts-expect-error - `to` prop is missing
           to="details"
@@ -83,7 +61,7 @@ export default function LandingPage() {
           }
         />
         <Tab
-          as={Link}
+          as={RemixLink}
           key="analytics"
           className="sm:text-lg mt-2 sm:mt-4 sm:mb-2"
           //@ts-expect-error - `to` prop is missing
@@ -96,7 +74,7 @@ export default function LandingPage() {
           }
         />
         <Tab
-          as={Link}
+          as={RemixLink}
           key="products"
           className="sm:text-lg mt-2 sm:mt-4 sm:mb-2 "
           //@ts-expect-error - `to` prop is missing

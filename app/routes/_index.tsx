@@ -1,10 +1,7 @@
-import { Image, User } from "@nextui-org/react";
-import type {
-  ActionFunctionArgs,
-  LoaderFunctionArgs,
-  MetaFunction,
-} from "@remix-run/node";
+import { Button, Image, User } from "@nextui-org/react";
+import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
 import {
+  Form,
   Link,
   useLoaderData,
   useNavigate,
@@ -16,6 +13,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
 import { FormEvent, useState } from "react";
 import { FaArrowUp, FaSpinner, FaX } from "react-icons/fa6";
+import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
 import { createSupabaseServerClient } from "~/supabase.server";
 import { Database } from "~/types/supabase";
@@ -26,6 +24,7 @@ enum AvailableStatus {
   NOT_AVAILABLE,
 }
 
+const SUBDOMAIN_REGEX = /[^a-zA-Z0-9-]/g;
 export const meta: MetaFunction = () => {
   return [
     { title: "LinkGo" },
@@ -36,7 +35,7 @@ export const meta: MetaFunction = () => {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const { supabaseClient } = createSupabaseServerClient(request);
   const userId = (await supabaseClient.auth.getUser()).data.user?.id ?? "";
-  const { data: user, error } = await supabaseClient
+  const { data: user } = await supabaseClient
     .from("profiles")
     .select("*")
     .eq("id", userId)
@@ -44,6 +43,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   let status = AvailableStatus.IDLE;
   const query = new URL(request.url).searchParams.get("store_name") ?? "";
+  if (!query.match(/^[a-zA-Z][a-zA-Z0-9-]*$/)) return { status, user };
   if (query.trim().length < 4) return { status, user };
   const { count } = await supabaseClient
     .from("urls")
@@ -57,42 +57,51 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   return { status, user };
 };
 
-export const action = ({ request }: ActionFunctionArgs) => {};
-
 export default function Index() {
   const { supabase } = useOutletContext<{
     supabase: SupabaseClient<Database>;
   }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get("store_name") ?? "");
+  const [query, setQuery] = useState(
+    searchParams.get("store_name")?.replace(SUBDOMAIN_REGEX, "") ?? ""
+  );
   const { state } = useNavigation();
   const navigate = useNavigate();
   const debounced = useDebouncedCallback(
     // function
-    (value) => {
-      setSearchParams({ store_name: value });
+    (value: string) => {
+      // replace space, special characters and
+      setSearchParams({
+        store_name: value.replace(SUBDOMAIN_REGEX, ""),
+      });
     },
     // delay in ms
     500
   );
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const searchParams = window.location.search;
+    const storeName = (searchParams.get("store_name") ?? "").replace(
+      SUBDOMAIN_REGEX,
+      ""
+    );
+    if (storeName.trim() === "") return;
     if (!user) {
-      console.log(encodeURI("/create" + searchParams.toString()));
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
           redirectTo: `${
             process.env.BASE_URL
           }/auth/callback?redirect=${encodeURI(
-            btoa("/create?" + searchParams)
+            "/create?store_name=" + storeName
           )}`,
         },
       });
-      if (error) console.log(error);
+      if (error) {
+        toast.error("Error signing in: " + error.message);
+        console.error(error);
+      }
     } else {
-      return navigate("/create" + searchParams);
+      return navigate("/create?store_name=" + storeName);
     }
   };
 
@@ -111,12 +120,14 @@ export default function Index() {
         </Link>
 
         {!user ? (
-          <Link
-            to={"/sign-in"}
-            className="p-3 sm:px-6 px-3 bg-gray-200 flex items-center gap-2 rounded-3xl cursor-pointer hover:scale-105 hover:bg-gray-100 active:scale-90"
-          >
-            Login
-          </Link>
+          <Form method="post" action="/sign-in">
+            <Button
+              type="submit"
+              className="p-3 sm:px-6 px-3 bg-gray-200 flex items-center gap-2 rounded-3xl cursor-pointer hover:scale-105 hover:bg-gray-100 active:scale-90"
+            >
+              Login
+            </Button>
+          </Form>
         ) : (
           <User
             className="text-white"
@@ -159,12 +170,17 @@ export default function Index() {
                 type="text"
                 className="bg-transparent peer py-5 px-2 outline-none border-none md:w-auto w-[8rem]"
                 placeholder=""
-                defaultValue={query}
-                onChange={(e) => debounced(e.target.value)}
+                value={query.replace(SUBDOMAIN_REGEX, "")}
+                onChange={(e) => {
+                  const value = e.target.value.replace(SUBDOMAIN_REGEX, "");
+                  setQuery(value);
+                  debounced(value);
+                }}
                 required
                 name="store_name"
+                pattern="[a-zA-Z0-9][a-zA-Z0-9-_]*"
               />
-              <label className="opacity-40 font-semibold">.link.go</label>
+              <span className="opacity-40 font-semibold">.link.go</span>
             </div>
             <button
               className={`px-4 grid place-items-center  transition-all ${clsx({

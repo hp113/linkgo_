@@ -1,6 +1,6 @@
-import { ActionFunctionArgs, redirect } from "@remix-run/node";
+import { ActionFunctionArgs } from "@remix-run/node";
+import { redirectWithError, redirectWithSuccess } from "remix-toast";
 import { createSupabaseServerClient } from "~/supabase.server";
-
 export const loader = async ({ request }: ActionFunctionArgs) => {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
@@ -9,15 +9,15 @@ export const loader = async ({ request }: ActionFunctionArgs) => {
     const { supabaseClient, headers } = createSupabaseServerClient(request);
     const { error } = await supabaseClient.auth.exchangeCodeForSession(code);
     if (error) {
-      return redirect("/sign-in");
+      return redirectWithError("/sign-in", "Authentication failed");
     }
     const redirectUrl = url.searchParams.get("redirect");
     if (redirectUrl) {
-      return redirect(atob(redirectUrl), {
+      return redirectWithSuccess(atob(redirectUrl), "Successfully logged in!", {
         headers: headers,
       });
     }
-    return redirect("/", {
+    return redirectWithSuccess("/", "Successfully logged in!", {
       headers: headers,
     });
   }

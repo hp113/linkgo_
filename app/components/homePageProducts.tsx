@@ -1,6 +1,5 @@
 import { Card, CardBody, Image } from "@nextui-org/react";
 
-
 interface Product {
   id: number;
   service_name: string;
@@ -12,9 +11,9 @@ interface HomePageProductsProps {
   productDetails: Product[];
 }
 
-export default function HomeProducts({ productDetails }: HomePageProductsProps) {
-  
-  console.log(productDetails);
+export default function HomeProducts({
+  productDetails,
+}: HomePageProductsProps) {
   return (
     <div className="gap-2 grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 w-full mx-4">
       {productDetails.map((product) => (

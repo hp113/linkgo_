@@ -1,71 +1,53 @@
 import {
-  Link,
-  Table,
-  TableBody,
-  TableCell,
-  TableColumn,
-  TableHeader,
-  TableRow,
+  Avatar,
+  Button,
+  Navbar,
+  NavbarBrand,
+  NavbarContent,
+  NavbarItem,
 } from "@nextui-org/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { Form, useLoaderData } from "@remix-run/react";
-import { createSupabaseServerClient } from "~/supabase.server";
+import { json } from "@remix-run/node";
+import { Outlet, useLoaderData } from "@remix-run/react";
+import { getUser } from "~/utils/server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { supabaseClient } = createSupabaseServerClient(request);
-
-  // Fetch authenticated user
-  const {
-    data: { user },
-    error: userError,
-  } = await supabaseClient.auth.getUser();
-  if (userError || !user) {
-    // Handle error or redirect if user is not authenticated
-    return redirect("/");
+  const user = await getUser(request);
+  if ("avatar_url" in user) {
+    return json({ user: user });
   }
-
-  // Fetch URLs associated with the user
-  const { data: urls, error: fetchError } = await supabaseClient
-    .from("urls")
-    .select("*")
-    .eq("user_id", user.id);
-
-  if (fetchError) {
-    // Handle fetch error appropriately
-    console.error("Error fetching URLs:", fetchError);
-    return new Response("Error fetching URLs", { status: 500 });
-  }
-  
-  // Return JSON response with table data
-  return json({ urls});
+  // This means the session does not exist now and we should redirect to the login page
+  console.log("User not found");
+  return user;
 };
 
 const Dashboard = () => {
-  const data = useLoaderData<typeof loader>();
-  console.log("This is data", data);
-  return (
-    <div>
-      <Table aria-label="Example table with dynamic content">
-        <TableHeader>
-        <TableColumn>NAME</TableColumn>
-        <TableColumn>STORE TYPE</TableColumn>
-        <TableColumn>ID</TableColumn>
-        </TableHeader>
-        <TableBody items={data.urls}>
-            {(item: any) => (
-                <TableRow key={item.id}>
-                    <TableCell>{item.url}</TableCell>
-                    <TableCell>{item.store_type}</TableCell>
-                    <TableCell><Link isExternal href="/landing/details" showAnchorIcon>{item.id}</Link></TableCell>
-                </TableRow>
-            )}
-        </TableBody>
-      </Table>
+  const { user } = useLoaderData<typeof loader>();
 
-      <Form action="/sign-out" method="post">
-        <button type="submit">Sign Out</button>
-      </Form>
+  return (
+    <div className="flex w-full flex-col sm:items-center">
+      <Navbar className="bg-gray-200">
+        <NavbarBrand>
+          <p className="font-bold text-inherit sm:text-2xl justify-start">
+            link.go
+          </p>
+        </NavbarBrand>
+        <NavbarContent justify="end">
+          <NavbarItem>
+            <form method="post" action="/sign-out">
+              <Button type="submit">Sign Out</Button>
+            </form>
+          </NavbarItem>
+          <NavbarItem>
+            <Avatar src={user.avatar_url ?? ""} size="lg" />
+          </NavbarItem>
+        </NavbarContent>
+      </Navbar>
+      <div className="w-full px-6 sm:w-3/4">
+        <h1 className="font-bold mt-4 sm:text-xl">Hi {user.full_name}!!!</h1>
+
+        <Outlet />
+      </div>
     </div>
   );
 };
