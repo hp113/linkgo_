@@ -26,7 +26,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 };
 export default function HomePage() {
   const { storeDetails, productDetails } = useLoaderData<typeof loader>();
-  console.log("This is storedetails", storeDetails);
   return (
     <div className="w-full min-h-screen flex flex-col items-center ">
       <Navbar>
@@ -48,7 +47,7 @@ export default function HomePage() {
           </NavbarItem>
         </NavbarContent>
       </Navbar>
-      <div className="relative flex justify-center items-center w-full">
+      <div className="relative flex justify-center items-center w-full ">
         <img
           src={storeDetails!.homepage_coverimg}
           alt="shop"
@@ -60,29 +59,39 @@ export default function HomePage() {
           className="absolute -bottom-8 xl:-bottom-[2vw] h-20 w-20 sm:w-[10vw] sm:h-[10vw] lg:w-[7vw] lg:h-[7vw] rounded-full transform -translate-x-1/2 left-1/2"
         />
       </div>
-      <h1 className="mt-10 font-bold sm:text-2xl">
-        {storeDetails!.store_name}
-      </h1>
-      <h3 className="text-green-500 sm:text-lg">Open till 6pm</h3>
-      <p className="mx-3 sm:text-lg">{storeDetails!.description}</p>
-      <p>{storeDetails!.phone_no}</p>
-      <HomeProducts productDetails={productDetails} />
-      <Link
-        to={`https://wa.me/${
-          storeDetails!.phone_no
-        }?text=Hello%20I%20want%20to%20order%20some%20items`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="fixed bottom-4 right-4"
-      >
-        <Button
-          color="success"
-          startContent={<FaWhatsapp />}
-          className="text-white rounded-full"
+      <div className="flex flex-col items-center md:max-w-screen-xl">
+        <h1 className="mt-10 font-bold sm:text-2xl">
+          {storeDetails!.store_name}
+        </h1>
+        <h3 className="text-green-500 sm:text-lg">Open till 6pm</h3>
+        <p className="mx-3 sm:text-lg ">{storeDetails!.description}</p>
+        <Link
+          to={`tel:${storeDetails!.phone_no}`}
+          className="text-green-500 font-bold text-lg"
         >
-          Message us
-        </Button>
-      </Link>
+          {storeDetails!.phone_no}
+        </Link>
+        <HomeProducts
+          storeDetails={storeDetails}
+          productDetails={productDetails}
+        />
+        <Link
+          to={`https://wa.me/${
+            storeDetails!.phone_no
+          }?text=Hello%20I%20want%20to%20order%20some%20items`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="fixed bottom-4 right-4"
+        >
+          <Button
+            color="success"
+            startContent={<FaWhatsapp />}
+            className="text-white rounded-full"
+          >
+            Message us
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 }

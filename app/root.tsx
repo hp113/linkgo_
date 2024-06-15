@@ -55,16 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const data = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const { state } = useNavigation();
-  const { toast } = useLoaderData<typeof loader>();
-  // Hook to show the toasts
-  useEffect(() => {
-    if (toast?.type === "error") {
-      notify.error(toast.message);
-    }
-    if (toast?.type === "success") {
-      notify.success(toast.message);
-    }
-  }, [toast]);
+
   return (
     <html lang="en">
       <head>
@@ -95,7 +86,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           }}
         />
         <Scripts />
-        <Toaster position="bottom-right" richColors />
       </body>
     </html>
   );
@@ -129,5 +119,21 @@ export default function App() {
     };
   }, [serverAccessToken, supabase, revalidate]);
 
-  return <Outlet context={{ supabase }} />;
+  const { toast } = useLoaderData<typeof loader>();
+  // Hook to show the toasts
+  useEffect(() => {
+    if (toast?.type === "error") {
+      notify.error(toast.message);
+    }
+    if (toast?.type === "success") {
+      notify.success(toast.message);
+    }
+  }, [toast]);
+
+  return (
+    <>
+      <Outlet context={{ supabase }} />
+      <Toaster position="bottom-right" richColors />
+    </>
+  );
 }

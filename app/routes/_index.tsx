@@ -129,13 +129,22 @@ export default function Index() {
             </Button>
           </Form>
         ) : (
-          <User
-            className="text-white"
-            name={user.full_name}
-            avatarProps={{
-              src: user.avatar_url ?? undefined,
-            }}
-          />
+          <div className="flex gap-5">
+            <User
+              className="text-white"
+              name={user.full_name}
+              avatarProps={{
+                src: user.avatar_url ?? undefined,
+              }}
+            />
+            <Button
+              as={Link}
+              to="/dashboard"
+              className="p-3 sm:px-6 px-3 bg-gray-200 flex items-center gap-2 rounded-3xl cursor-pointer hover:scale-105 hover:bg-gray-100 active:scale-90"
+            >
+              Dashboard
+            </Button>
+          </div>
         )}
       </div>
       <div className="w-fit h-fit z-10" id="container">

@@ -1,4 +1,5 @@
-import { Card, CardBody, Image } from "@nextui-org/react";
+import { Card, CardBody, Image, Link } from "@nextui-org/react";
+import { Tables } from "~/types/supabase";
 
 interface Product {
   id: number;
@@ -8,10 +9,12 @@ interface Product {
 }
 
 interface HomePageProductsProps {
+  storeDetails: Tables<"url_details">;
   productDetails: Product[];
 }
 
 export default function HomeProducts({
+  storeDetails,
   productDetails,
 }: HomePageProductsProps) {
   return (
@@ -21,6 +24,9 @@ export default function HomeProducts({
           shadow="sm"
           key={product.id}
           isPressable
+          as={Link}
+          isExternal
+          href={`https://wa.me/${storeDetails.phone_no}?text=Hello%20I%20want%20to%20order%20${product.service_name}%20from%20your%20store`}
           className="m-4 flex flex-row"
         >
           <CardBody className="overflow-visible p-0 flex-shrink-0 flex-row gap-2">
