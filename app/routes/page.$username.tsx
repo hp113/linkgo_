@@ -64,7 +64,9 @@ export default function HomePage() {
           {storeDetails!.store_name}
         </h1>
         <h3 className="text-green-500 sm:text-lg">Open till 6pm</h3>
-        <p className="mx-3 sm:text-lg ">{storeDetails!.description}</p>
+        <p className="mx-3 sm:text-lg break-words">
+          {storeDetails!.description}
+        </p>
         <Link
           to={`tel:${storeDetails!.phone_no}`}
           className="text-green-500 font-bold text-lg"
