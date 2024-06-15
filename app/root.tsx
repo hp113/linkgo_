@@ -77,7 +77,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <NextUIProvider navigate={navigate}>
           <Progress
             isIndeterminate={state === "loading" || state === "submitting"}
-            className="z-50"
+            className={`z-50 fixed top-0 ${
+              state === "loading" || state === "submitting"
+                ? "opacity-1"
+                : "opacity-0"
+            }`}
             size="sm"
           />
           {children}
