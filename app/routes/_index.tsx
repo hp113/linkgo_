@@ -214,6 +214,18 @@ export default function Index() {
               </span>
             </button>
           </div>
+          {status !== AvailableStatus.IDLE && (
+            <p
+              className={`mt-2 text-sm md:text-lg sm:text-md ${clsx({
+                "text-green-500": status === AvailableStatus.AVAILABLE,
+                "text-red-500": status === AvailableStatus.NOT_AVAILABLE,
+              })}`}
+            >
+              {status === AvailableStatus.NOT_AVAILABLE
+                ? "This URL is already taken"
+                : "This URL is available"}
+            </p>
+          )}
           {/* {hasError === 1 && <div className="p-4 max-w-[70vw] text-center text-red-500 filter drop-shadow-md shadow-white text-sm">{errorMessage}</div>} */}
         </form>
       </div>
