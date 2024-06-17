@@ -8,6 +8,13 @@ import {
   DropdownTrigger,
   Input,
   Link,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
   Selection,
   SortDescriptor,
   Table,
@@ -17,14 +24,24 @@ import {
   TableHeader,
   TableRow,
   User,
+  useDisclosure,
 } from "@nextui-org/react";
-import { useNavigate } from "@remix-run/react";
-import React, { Key, useCallback, useMemo, useState } from "react";
+import { Form, useActionData, useNavigate, useSubmit } from "@remix-run/react";
+import React, { Key, useCallback, useEffect, useMemo, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { FiChevronDown, FiPlus } from "react-icons/fi";
 import { IoSearch } from "react-icons/io5";
 import { Tables } from "~/types/supabase";
 import { capitalize } from "../utils/client";
+import { useRemixForm } from "remix-hook-form";
+import zod from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { toast } from "sonner";
+
+const schema = zod.object({
+  url: zod.string().min(4),
+  store_type: zod.string().min(1, { message: "Store type is required." }),
+});
 
 const columns = [
   //   { name: "ID", uid: "id", sortable: true },
@@ -60,7 +77,19 @@ export type DashboardTableProps = {
   urls: Url[];
 };
 
+const stores = [
+  {key: "free", label: "free"},
+  {key: "pro", label: "pro"}
+];
+
+interface ActionData {
+  error?: string;
+  message?: string;
+}
+
 export default function DashboardTable({ urls }: DashboardTableProps) {
+  const { isOpen, onOpen, onOpenChange, onClose } = useDisclosure();
+
   const [filterValue, setFilterValue] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<Selection>(
     new Set(INITIAL_VISIBLE_COLUMNS)
@@ -260,7 +289,7 @@ export default function DashboardTable({ urls }: DashboardTableProps) {
                 ))}
               </DropdownMenu>
             </Dropdown>
-            <Button color="primary" endContent={<FiPlus />}>
+            <Button color="primary" onPress={onOpen} endContent={<FiPlus />}>
               Add New
             </Button>
           </div>
@@ -269,39 +298,133 @@ export default function DashboardTable({ urls }: DashboardTableProps) {
     );
   }, [filterValue, onSearchChange, statusFilter, visibleColumns, onClear]);
 
+  // const submit = useSubmit();
+
+  // const handleSubmit = async ( event: React.FormEvent<HTMLFormElement>) => {
+  //   event.preventDefault();
+
+  //   const formData = new FormData(event.currentTarget);
+  //   const url = formData.get("url") as string;
+  //   const storeType = formData.get("store_type") as string;
+
+  //   console.log("Received form data:", { url, storeType });
+  //   // try {
+  //   //   await addURL(request, url, storeType); // Call your action function
+  //   //   // Redirect or handle success
+  //   // } catch (error) {
+  //   //   console.error('Error:', error);
+  //   //   // Handle error if needed
+  //   // }
+  // };
+
+  
+  const { formState, watch, handleSubmit, register, control, reset } =
+    useRemixForm<zod.infer<typeof schema>>({
+      resolver: zodResolver(schema),
+      submitConfig: { encType: "multipart/form-data" },
+    });
+
+    const {errors} = formState;
+    // console.log("Errors", errors);
+  const actionData = useActionData<ActionData>();
+  // console.log("Action Data", actionData);
+
+  useEffect(() => {
+    if (actionData) {
+      if ('message' in actionData) {
+        toast.success(actionData.message);
+        reset();
+        onClose();
+      }
+
+      if ('error' in actionData) {
+        toast.error(actionData.error);
+      }
+    }
+  }, [actionData, onClose, reset]);
+
+
   return (
-    <Table
-      aria-label="Example table with custom cells, pagination and sorting"
-      isHeaderSticky
-      classNames={{
-        wrapper: "max-h-[382px]",
-      }}
-      sortDescriptor={sortDescriptor}
-      topContent={topContent}
-      topContentPlacement="outside"
-      onSortChange={setSortDescriptor}
-      onRowAction={(key) => navigate(`${key}/details`)}
-    >
-      <TableHeader columns={headerColumns}>
-        {(column) => (
-          <TableColumn
-            key={column.uid}
-            align={column.uid === "actions" ? "center" : "start"}
-            allowsSorting={column.sortable}
-          >
-            {column.name}
-          </TableColumn>
-        )}
-      </TableHeader>
-      <TableBody emptyContent={"No urls found"} items={sortedItems}>
-        {(item) => (
-          <TableRow key={item.id}>
-            {(columnKey) => (
-              <TableCell>{renderCell(item, columnKey)}</TableCell>
-            )}
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+    <>
+      <Table
+        aria-label="Example table with custom cells, pagination and sorting"
+        isHeaderSticky
+        classNames={{
+          wrapper: "max-h-[382px]",
+        }}
+        sortDescriptor={sortDescriptor}
+        topContent={topContent}
+        topContentPlacement="outside"
+        onSortChange={setSortDescriptor}
+        onRowAction={(key) => navigate(`${key}/details`)}
+      >
+        <TableHeader columns={headerColumns}>
+          {(column) => (
+            <TableColumn
+              key={column.uid}
+              align={column.uid === "actions" ? "center" : "start"}
+              allowsSorting={column.sortable}
+            >
+              {column.name}
+            </TableColumn>
+          )}
+        </TableHeader>
+        <TableBody emptyContent={"No urls found"} items={sortedItems}>
+          {(item) => (
+            <TableRow key={item.id}>
+              {(columnKey) => (
+                <TableCell>{renderCell(item, columnKey)}</TableCell>
+              )}
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+      <Modal isOpen={isOpen} onOpenChange={onOpenChange} placement="top-center">
+        <ModalContent>
+          {(onClose) => (
+            <Form method="post" onSubmit={handleSubmit}>
+              <ModalHeader className="flex flex-col gap-1">Log in</ModalHeader>
+              <ModalBody>
+                <Input
+                  autoFocus
+                  {...register("url")}
+                  aria-label="url"
+                  label="URL"
+                  name="url"
+                  placeholder="Enter URL"
+                  variant="bordered"
+                  isInvalid={!!errors.url}
+              errorMessage={errors.url?.message?.toString() || ""}
+                />
+                <Select
+                  label="Select a store type"
+                  {...register("store_type")}
+                  aria-label="store_type"
+                  name="store_type"
+                  placeholder="Select Store Type"
+                  variant="bordered"
+                  isInvalid={!!errors.store_type}
+              errorMessage={errors.store_type?.message?.toString() || ""}
+                >
+                  {stores.map((store) => (
+                    <SelectItem key={store.key} value={store.key}>
+                      {store.label}
+                    </SelectItem>
+                  ))}
+                </Select>
+              </ModalBody>
+              <ModalFooter>
+                <Button color="danger" variant="flat" onPress={onClose}>
+                  Close
+                </Button>
+                <Button color="primary" type="submit">
+                  Sign in
+                </Button>
+              </ModalFooter>
+            </Form>
+          )}
+        </ModalContent>
+      </Modal>
+    </>
   );
 }

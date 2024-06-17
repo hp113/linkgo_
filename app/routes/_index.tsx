@@ -13,6 +13,7 @@ import { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
 import { FormEvent, useState } from "react";
 import { FaArrowUp, FaSpinner, FaX } from "react-icons/fa6";
+import { IoLogoSlack } from "react-icons/io5";
 import { toast } from "sonner";
 import { useDebouncedCallback } from "use-debounce";
 import { createSupabaseServerClient } from "~/supabase.server";
@@ -110,13 +111,14 @@ export default function Index() {
     <main className="bg-dark h-screen w-screen flex items-center justify-center flex-col bg-black">
       <div className="w-[96%] justify-between flex items-center rounded-[3rem] py-3 absolute sm:top-4 top-2 z-[9999999999] mdpx-12 sm:px-6 px-3 mx-auto bg-white bg-opacity-[0.1] border backdrop-blur-xl hover:glow-white">
         <Link to={"/"}>
-          <Image
+          {/* <Image
             src={"https://linktree.sirv.com/Images/logo-icon.svg"}
             alt="logo"
             height={25}
             width={25}
             className="filter invert"
-          />
+          /> */}
+          <IoLogoSlack className="text-white w-10 h-10" />
         </Link>
 
         {!user ? (
