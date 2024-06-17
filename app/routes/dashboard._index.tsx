@@ -79,11 +79,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     if (error && error.code !== 'PGRST116') { // If error is not "no rows returned" error
       // console.error('Error querying database:', error);
-      return json({ error: 'Database error occurred.' }, { status: 500 });
+      return json({ error: 'Database error occurred.' });
     }
 
   if (data) {
-    return json({ error: "URL already exists." }, { status: 400 });
+    return json({ error: "URL already exists." });
   }
 
   const { data: insertData, error: insertError } = await supabaseClient
@@ -92,7 +92,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   if (insertError) {
     console.error("Error inserting into database:", insertError);
-    return json({ error: "Failed to insert data." }, { status: 500 });
+    return json({ error: "Failed to insert data." });
   }
 
   // Successful insertion

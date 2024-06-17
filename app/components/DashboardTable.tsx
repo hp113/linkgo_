@@ -318,7 +318,7 @@ export default function DashboardTable({ urls }: DashboardTableProps) {
   // };
 
   
-  const { formState, watch, handleSubmit, register, control, reset } =
+  const { formState, handleSubmit, register, reset } =
     useRemixForm<zod.infer<typeof schema>>({
       resolver: zodResolver(schema),
       submitConfig: { encType: "multipart/form-data" },
@@ -336,12 +336,12 @@ export default function DashboardTable({ urls }: DashboardTableProps) {
         reset();
         onClose();
       }
-
+      
       if ('error' in actionData) {
         toast.error(actionData.error);
       }
     }
-  }, [actionData, onClose, reset]);
+  }, [actionData, reset, onClose]);
 
 
   return (
