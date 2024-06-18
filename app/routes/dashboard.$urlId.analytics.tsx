@@ -7,5 +7,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 };
 
 export default function Analytics() {
-  return <div>Hello from Analytics</div>;
+  return (
+    <div>
+      <h1 className="font-bold text-xl text-center">Coming soon!!!</h1>
+    </div>
+  );
 }

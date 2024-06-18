@@ -46,8 +46,8 @@ const ACCEPTED_IMAGE_TYPES = [
 
 const AddProductSchema = zod.object({
   _action: zod.string(),
-  serviceName: zod.string().min(3),
-  servicePrice: zod.coerce.number().min(1, "Service price must be at least 1"),
+  serviceName: zod.string().min(3).max(50),
+  servicePrice: zod.coerce.number().min(1, "Service price must be at least 1").max(1000000, "Service price must be at most 100000"),
   serviceImage: zod.any(),
 });
 const DeleteProductSchema = zod.object({

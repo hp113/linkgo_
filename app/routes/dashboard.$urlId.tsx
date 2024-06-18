@@ -45,7 +45,7 @@ export default function LandingPage() {
         aria-label="Options"
         color="default"
         variant="underlined"
-        className="px-3 my-2 "
+        className="px-3 my-2 sm:flex sm:items-center sm:justify-center"
       >
         <Tab
           key="details"
@@ -60,19 +60,7 @@ export default function LandingPage() {
             </div>
           }
         />
-        <Tab
-          as={RemixLink}
-          key="analytics"
-          className="sm:text-lg mt-2 sm:mt-4 sm:mb-2"
-          //@ts-expect-error - `to` prop is missing
-          to="analytics"
-          title={
-            <div className="flex flex-col items-center">
-              <TbBrandGoogleAnalytics />
-              <span className="mb-2  sm:mb-4">Analytics</span>
-            </div>
-          }
-        />
+        
         <Tab
           as={RemixLink}
           key="products"
@@ -83,6 +71,19 @@ export default function LandingPage() {
             <div className="flex flex-col items-center">
               <MdOutlineProductionQuantityLimits />
               <span className="mb-2 sm:mb-4">Products</span>
+            </div>
+          }
+        />
+        <Tab
+          as={RemixLink}
+          key="analytics"
+          className="sm:text-lg mt-2 sm:mt-4 sm:mb-2"
+          //@ts-expect-error - `to` prop is missing
+          to="analytics"
+          title={
+            <div className="flex flex-col items-center">
+              <TbBrandGoogleAnalytics />
+              <span className="mb-2  sm:mb-4">Analytics</span>
             </div>
           }
         />

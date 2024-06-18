@@ -30,6 +30,11 @@ export default function HomePage() {
     <div className="w-full min-h-screen flex flex-col items-center ">
       <Navbar>
         <NavbarBrand>
+        <img
+          src={storeDetails!.homepage_logo}
+          alt="bonton"
+          className=" h-10 w-10  sm:w-[5vw] sm:h-[5vw] xl:w-[3.5vw] xl:h-[3.5vw]  rounded-lg transform  left-1/2 mr-2"
+        />
           <p className="font-bold text-inherit sm:text-xl md:text-2xl lg:text-3xl">
             {storeDetails!.store_name}
           </p>
@@ -63,16 +68,17 @@ export default function HomePage() {
         <h1 className="mt-10 font-bold sm:text-2xl">
           {storeDetails!.store_name}
         </h1>
-        <h3 className="text-green-500 sm:text-lg">Open till 6pm</h3>
+        {/* <h3 className="text-green-500 sm:text-lg">Open till 6pm</h3> */}
+        <Link
+          to={`tel:${storeDetails!.phone_no}`}
+          className="text-green-500 sm:text-lg"
+        >
+          Ph : {storeDetails!.phone_no}
+        </Link>
         <p className="mx-3 sm:text-lg break-words">
           {storeDetails!.description}
         </p>
-        <Link
-          to={`tel:${storeDetails!.phone_no}`}
-          className=" font-bold text-lg"
-        >
-          {storeDetails!.phone_no}
-        </Link>
+        
         <HomeProducts
           storeDetails={storeDetails}
           productDetails={productDetails}

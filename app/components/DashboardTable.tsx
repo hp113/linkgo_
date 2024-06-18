@@ -78,8 +78,8 @@ export type DashboardTableProps = {
 };
 
 const stores = [
-  {key: "free", label: "free"},
-  {key: "pro", label: "pro"}
+  {key: "physical", label: "physical"},
+  {key: "digital", label: "digital"}
 ];
 
 interface ActionData {
@@ -383,7 +383,7 @@ export default function DashboardTable({ urls }: DashboardTableProps) {
         <ModalContent>
           {(onClose) => (
             <Form method="post" onSubmit={handleSubmit}>
-              <ModalHeader className="flex flex-col gap-1">Log in</ModalHeader>
+              <ModalHeader className="flex flex-col gap-1">Add New URL</ModalHeader>
               <ModalBody>
                 <Input
                   autoFocus
@@ -418,7 +418,7 @@ export default function DashboardTable({ urls }: DashboardTableProps) {
                   Close
                 </Button>
                 <Button color="primary" type="submit">
-                  Sign in
+                  Add URL
                 </Button>
               </ModalFooter>
             </Form>

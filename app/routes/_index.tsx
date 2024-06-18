@@ -118,7 +118,8 @@ export default function Index() {
             width={25}
             className="filter invert"
           /> */}
-          <IoLogoSlack className="text-white w-10 h-10" />
+          {/* <IoLogoSlack className="text-white w-10 h-10" /> */}
+          <img src="/design.png" alt="Design Logo" className="w-10 h-10 rounded-lg" />
         </Link>
 
         {!user ? (
@@ -136,7 +137,9 @@ export default function Index() {
               className="text-white"
               name={user.full_name}
               avatarProps={{
-                src: user.avatar_url ?? undefined,
+                // src: user.avatar_url ?? undefined,
+                src: "",
+                alt: user.full_name?.toString(),
               }}
             />
             <Button
