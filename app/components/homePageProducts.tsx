@@ -39,7 +39,7 @@ export default function HomeProducts({
               />
             </div>
             <div className="flex justify-between items-center w-full">
-              <h2 className="text-xl font-semibold">{product.service_name}</h2>
+              <h2 className="text-xl font-black">{product.service_name}</h2>
               <p className="text-green-500 text-lg font-bold mr-2">
                 Rs.{product.service_price}
               </p>

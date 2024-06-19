@@ -12,7 +12,6 @@ import {
 } from "@remix-run/react";
 import { useEffect, useState } from "react";
 import { createSupabaseServerClient } from "./supabase.server";
-
 import { NextUIProvider, Progress } from "@nextui-org/react";
 import type { LinksFunction } from "@remix-run/node";
 import { createBrowserClient } from "@supabase/auth-helpers-remix";
@@ -64,7 +63,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className=" font-satoshi">
         <NextUIProvider navigate={navigate}>
           <Progress
             isIndeterminate={state === "loading" || state === "submitting"}
