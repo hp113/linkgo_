@@ -107,6 +107,9 @@ export default function Index() {
   };
 
   const { status, user } = useLoaderData<typeof loader>();
+  const avatarSrc = user?.avatar_url || '/user.png';
+  
+  console.log("user", user);
   return (
     <main className="bg-dark h-screen w-screen flex items-center justify-center flex-col bg-black">
       <div className="w-[96%] justify-between flex items-center rounded-[3rem] py-3 absolute sm:top-4 top-2 z-[9999999999] mdpx-12 sm:px-6 px-3 mx-auto bg-white bg-opacity-[0.1] border backdrop-blur-xl hover:glow-white">
@@ -138,7 +141,7 @@ export default function Index() {
               name={user.full_name}
               avatarProps={{
                 // src: user.avatar_url ?? undefined,
-                src: "",
+                src: avatarSrc,
                 alt: user.full_name?.toString(),
               }}
             />
