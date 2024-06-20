@@ -1,5 +1,6 @@
 import {
 	Button,
+	Link as NLink,
 	Navbar,
 	NavbarBrand,
 	NavbarContent,
@@ -9,6 +10,7 @@ import { type LoaderFunctionArgs, json } from "@remix-run/node";
 import { Link, useLoaderData } from "@remix-run/react";
 import { FaWhatsapp } from "react-icons/fa6";
 import { redirectWithError } from "remix-toast";
+import type { Geometry } from "~/components/LocationSelector.client";
 import { fetchProducts, fetchUrlDetails } from "~/utils/server";
 import HomeProducts from "../components/homePageProducts";
 
@@ -26,6 +28,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 };
 export default function HomePage() {
 	const { storeDetails, productDetails } = useLoaderData<typeof loader>();
+	const location = storeDetails?.location as Geometry | null;
 	return (
 		<div className="w-full min-h-screen flex flex-col items-center ">
 			<Navbar>
@@ -40,16 +43,20 @@ export default function HomePage() {
 					</p>
 				</NavbarBrand>
 				<NavbarContent justify="end">
-					<NavbarItem>
-						<Button
-							as={Link}
-							className="text-white bg-black"
-							href="#"
-							variant="flat"
-						>
-							Direction
-						</Button>
-					</NavbarItem>
+					{!!location && (
+						<NavbarItem>
+							<Button
+								as={NLink}
+								className="text-white bg-black"
+								href={`https://www.google.com/maps/dir/?api=1&destination=${location.coordinates[1]},${location.coordinates[0]}`}
+								isExternal
+								showAnchorIcon
+								variant="flat"
+							>
+								Direction
+							</Button>
+						</NavbarItem>
+					)}
 				</NavbarContent>
 			</Navbar>
 			<div className="relative flex justify-center items-center w-full ">
@@ -80,6 +87,7 @@ export default function HomePage() {
 				</p>
 
 				<HomeProducts
+					// @ts-expect-error - `storeDetails.location` is optional
 					storeDetails={storeDetails}
 					productDetails={productDetails}
 				/>

@@ -108,7 +108,9 @@ function DashboardIndex() {
 	return (
 		<>
 			<p className="sm:text-lg font-bold text-sm py-5 "> Registered URLs</p>
-			<DashboardTable urls={urls} />
+			{
+				// @ts-expect-error - `urls.url_details.location` is optional
+			} <DashboardTable urls={urls} />
 		</>
 	);
 }

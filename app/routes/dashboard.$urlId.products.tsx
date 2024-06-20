@@ -326,7 +326,7 @@ export default function Products() {
 									color="primary"
 									type="submit"
 									isLoading={state === "submitting"}
-									disabled={state === "submitting"}
+									isDisabled={state === "submitting"}
 								>
 									Add Product
 								</Button>

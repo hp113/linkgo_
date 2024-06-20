@@ -25,7 +25,7 @@ import {
 	useRouteError,
 } from "@remix-run/react";
 import { Controller } from "react-hook-form";
-import { useRemixForm } from "remix-hook-form";
+import { useRemixForm, validateFormData } from "remix-hook-form";
 import { jsonWithError, jsonWithSuccess } from "remix-toast";
 import { ClientOnly } from "remix-utils/client-only";
 import { toast } from "sonner";
@@ -33,6 +33,13 @@ import zod from "zod";
 import LocationSelector from "~/components/LocationSelector.client";
 import { createSupabaseServerClient } from "~/supabase.server";
 import { fetchUrlDetails, getUser } from "~/utils/server";
+
+export const addLocationSchema = zod.object({
+	latitude: zod.coerce.number(),
+	longitude: zod.coerce.number(),
+	_action: zod.string(),
+});
+
 const schema = zod.object({
 	username: zod.string().min(3),
 	storeName: zod.string().min(3),
@@ -40,6 +47,7 @@ const schema = zod.object({
 	phone_no: zod.string().min(10),
 	homepage_coverimg: zod.any(),
 	homepage_logo: zod.any(),
+	_action: zod.string(),
 });
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
@@ -48,6 +56,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 	const { urlId } = params;
 	const storeDetails = await fetchUrlDetails(request, undefined, urlId);
+
 	return json({ store: storeDetails });
 };
 
@@ -77,86 +86,113 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 		unstable_createMemoryUploadHandler(),
 	);
 
-	// Extract data from formData
-	const receivedValues = {
-		username: formData.get("username"),
-		storeName: formData.get("storeName"),
-		bio: formData.get("bio"),
-		phone_no: formData.get("phone_no"),
-		homepage_coverimg: formData.get("homepage_coverimg"),
-		homepage_logo: formData.get("homepage_logo"),
-	};
+	const action = formData.get("_action");
+	if (action === '"save"') {
+		const { errors, data } = await validateFormData<zod.infer<typeof schema>>(
+			formData,
+			zodResolver(schema),
+		);
+		if (errors) {
+			return json({ errors }, { status: 422 });
+		}
+		const {
+			username,
+			storeName,
+			bio,
+			phone_no,
+			homepage_coverimg,
+			homepage_logo,
+		} = data;
+		// Ensure homepage_coverimg and homepage_logo are File objects
+		if (
+			!(homepage_coverimg instanceof File) ||
+			!(homepage_logo instanceof File)
+		) {
+			return jsonWithError(
+				{ error: "Invalid file upload" },
+				"Invalid file upload",
+				{ status: 400 },
+			);
+		}
+		const [coverImgResult, logoResult] = await Promise.all([
+			supabaseClient.storage
+				.from("services")
+				.upload(`${urlId}/coverimg_${Date.now()}`, homepage_coverimg),
+			supabaseClient.storage
+				.from("services")
+				.upload(`${urlId}/logo_${Date.now()}`, homepage_logo),
+		]);
 
-	// Validate data using Zod
-	const parsedData = schema.safeParse(receivedValues);
-	if (!parsedData.success) {
-		const errors = parsedData.error.format();
-		return json({ errors });
-	}
+		if (coverImgResult.error || logoResult.error) {
+			console.error(
+				"Error uploading file",
+				coverImgResult.error,
+				logoResult.error,
+			);
+			return jsonWithError(
+				{ error: "Cannot upload file" },
+				"Invalid file upload",
+				{ status: 500 },
+			);
+		}
 
-	const data = parsedData.data;
-	let { username, storeName, bio, phone_no } = data;
-	const { homepage_coverimg, homepage_logo } = data;
+		// Upsert data into Supabase table
+		const response = await supabaseClient.from("url_details").upsert(
+			{
+				username: username.replace(/"/g, "").trim(),
+				store_name: storeName.replace(/"/g, "").trim(),
+				description: bio.replace(/"/g, "").trim() || "",
+				phone_no: phone_no.replace(/"/g, "").trim(),
+				url_id: urlId.replace(/"/g, "").trim(),
+				homepage_coverimg: coverImgResult.data.path,
+				homepage_logo: logoResult.data.path,
+			},
+			{ onConflict: "url_id" },
+		);
 
-	username = username.replace(/"/g, "").trim();
-	storeName = storeName.replace(/"/g, "").trim();
-	bio = bio ? bio.replace(/"/g, "").trim() : "";
-	phone_no = phone_no.replace(/"/g, "").trim();
-	// Ensure homepage_coverimg and homepage_logo are File objects
-	if (
-		!(homepage_coverimg instanceof File) ||
-		!(homepage_logo instanceof File)
-	) {
-		return jsonWithError(
-			{ error: "Invalid file upload" },
-			"Invalid file upload",
-			{ status: 400 },
+		if (response.error) {
+			return jsonWithError(
+				{ error: response.error.message },
+				response.error.message,
+				{ status: 500 },
+			);
+		}
+
+		return jsonWithSuccess(
+			{ message: "Details added successfully" },
+			"Details added successfully",
 		);
 	}
-	const [coverImgResult, logoResult] = await Promise.all([
-		supabaseClient.storage
-			.from("services")
-			.upload(`${urlId}/coverimg_${Date.now()}`, homepage_coverimg),
-		supabaseClient.storage
-			.from("services")
-			.upload(`${urlId}/logo_${Date.now()}`, homepage_logo),
-	]);
 
-	if (coverImgResult.error) {
-		throw coverImgResult.error;
-	}
-
-	if (logoResult.error) {
-		throw logoResult.error;
-	}
-
-	// Upsert data into Supabase table
-	const response = await supabaseClient.from("url_details").upsert(
-		{
-			username: username,
-			store_name: storeName,
-			description: bio || "",
-			phone_no: phone_no,
-			url_id: urlId,
-			created_at: new Date().toISOString(),
-			homepage_coverimg: coverImgResult.data.path,
-			homepage_logo: logoResult.data.path,
-		},
-		{ onConflict: "url_id" },
-	);
-
-	if (response.error) {
-		return jsonWithError(
-			{ error: response.error.message },
-			response.error.message,
-			{ status: 500 },
+	if (action === '"locationChange"') {
+		const { errors, data } = await validateFormData<
+			zod.infer<typeof addLocationSchema>
+		>(formData, zodResolver(addLocationSchema));
+		if (errors) {
+			return json({ errors }, { status: 422 });
+		}
+		const { latitude, longitude } = data;
+		const location = `POINT(${longitude} ${latitude})`;
+		const response = await supabaseClient
+			.from("url_details")
+			.update({ location })
+			.eq("url_id", urlId);
+		if (response.error) {
+			return jsonWithError(
+				{ error: response.error.message },
+				response.error.message,
+				{ status: 500 },
+			);
+		}
+		return jsonWithSuccess(
+			{ message: "Location added successfully" },
+			"Location added successfully",
 		);
 	}
 
-	return jsonWithSuccess(
-		{ message: "Details added successfully" },
-		"Details added successfully",
-	);
+	return jsonWithError({ error: "Invalid action" }, "Invalid action", {
+		status: 400,
+	});
 };
 
 export default function Details() {
@@ -170,6 +206,7 @@ export default function Details() {
 		resolver: zodResolver(schema),
 		submitConfig: { encType: "multipart/form-data" },
 		defaultValues: {
+			_action: "save",
 			username: storeDetails?.username ?? "",
 			storeName: storeDetails?.store_name ?? "",
 			phone_no: storeDetails?.phone_no ?? "",
@@ -316,7 +353,7 @@ export default function Details() {
 								</div>
 							</div>
 						</div>
-						<div className="flex justify-center">
+						<div className="flex justify-end">
 							<Button
 								type="submit"
 								color="primary"
@@ -324,7 +361,7 @@ export default function Details() {
 								isLoading={state === "submitting"}
 								isDisabled={!(state === "idle")}
 							>
-								Submit
+								Save
 							</Button>
 						</div>
 					</CardBody>
