@@ -1,8 +1,13 @@
 import { Button, User } from "@nextui-org/react";
-import type { LoaderFunctionArgs, MetaFunction } from "@remix-run/node";
+import type {
+	ActionFunctionArgs,
+	LoaderFunctionArgs,
+	MetaFunction,
+} from "@remix-run/node";
 import {
 	Form,
 	Link,
+	redirect,
 	useLoaderData,
 	useNavigate,
 	useNavigation,
@@ -11,9 +16,9 @@ import {
 } from "@remix-run/react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { clsx } from "clsx";
-import { type FormEvent, useState } from "react";
+import { useState } from "react";
 import { FaArrowUp, FaSpinner, FaX } from "react-icons/fa6";
-import { toast } from "sonner";
+import { jsonWithError } from "remix-toast";
 import { useDebouncedCallback } from "use-debounce";
 import { createSupabaseServerClient } from "~/supabase.server";
 import type { Database } from "~/types/supabase";
@@ -57,6 +62,39 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 	return { status, user };
 };
 
+export const action = async ({ request, context }: ActionFunctionArgs) => {
+	const formData = await request.formData();
+	const storeName = ((formData.get("store_name") as string) ?? "").replace(
+		SUBDOMAIN_REGEX,
+		"",
+	);
+	if (storeName.trim() === "") return;
+	const { supabaseClient } = createSupabaseServerClient(request);
+	const {
+		data: { user },
+	} = await supabaseClient.auth.getUser();
+	if (!user) {
+		const { data, error } = await supabaseClient.auth.signInWithOAuth({
+			provider: "google",
+			options: {
+				redirectTo: `${
+					process.env.VERCEL_URL ?? "http://localhost:5173"
+				}/auth/callback?redirect=${encodeURI(
+					`/create?store_name=${storeName}`,
+				)}`,
+			},
+		});
+		if (error) {
+			console.error(error);
+			return jsonWithError({ message: error.message }, error.message, {
+				status: 400,
+			});
+		}
+		return redirect(data.url);
+	}
+	return redirect(`/create?store_name=${storeName}`);
+};
+
 export default function Index() {
 	const { supabase } = useOutletContext<{
 		supabase: SupabaseClient<Database>;
@@ -78,34 +116,8 @@ export default function Index() {
 		// delay in ms
 		500,
 	);
-	const handleSubmit = async (e: FormEvent) => {
-		e.preventDefault();
-		const storeName = (searchParams.get("store_name") ?? "").replace(
-			SUBDOMAIN_REGEX,
-			"",
-		);
-		if (storeName.trim() === "") return;
-		if (!user) {
-			const { error } = await supabase.auth.signInWithOAuth({
-				provider: "google",
-				options: {
-					redirectTo: `${
-						process.env.VERCEL_URL ?? "http://localhost:5173"
-					}/auth/callback?redirect=${encodeURI(
-						`/create?store_name=${storeName}`,
-					)}`,
-				},
-			});
-			if (error) {
-				toast.error(`Error signing in: ${error.message}`);
-				console.error(error);
-			}
-		} else {
-			return navigate(`/create?store_name=${storeName}`);
-		}
-	};
+	const { status, user, VERCEL_URL } = useLoaderData<typeof loader>();
 
-	const { status, user } = useLoaderData<typeof loader>();
 	const avatarSrc = user?.avatar_url || "/user.png";
 
 	return (
@@ -158,11 +170,7 @@ export default function Index() {
 				)}
 			</div>
 			<div className="w-fit h-fit z-10" id="container">
-				<form
-					className="flex items-center justify-center flex-col"
-					onSubmit={handleSubmit}
-					id="inner"
-				>
+				<Form className="flex items-center justify-center flex-col" id="inner">
 					<div className="text-[2.15rem] sm:text-[3rem] md:text-[4rem] font-bold text-white z-10 mb-4 max-w-[70vw] text-center">
 						The Only Link You&apos;ll Ever Need
 					</div>
@@ -170,11 +178,14 @@ export default function Index() {
 						connect your audience to all of your content with one link
 					</div>
 					<div
-						className={"flex items-stretch gap-2 relative filter "}
+						className={
+							"flex items-stretch w-[90vw] md:w-auto gap-1 md:gap-2 relative filter "
+						}
 						id="input"
 					>
-						<div
-							className={`flex items-center rounded-l-xl bg-white px-6 text-sm md:text-2xl sm:text-md transition-all ${clsx(
+						<label
+							htmlFor="store_name"
+							className={`flex flex-1 items-center rounded-l-xl bg-white text-sm md:text-2xl px-2 md:px-6 sm:text-md transition-all ${clsx(
 								{
 									"border-green-500 border-[2px]":
 										status === AvailableStatus.AVAILABLE,
@@ -187,7 +198,7 @@ export default function Index() {
 						>
 							<input
 								type="text"
-								className="bg-transparent peer py-5 px-2 outline-none border-none md:w-auto w-[8rem]"
+								className="bg-transparent peer py-3 md:py-5 pl-2 md:px-2 text-right outline-none border-none md:w-auto w-[8rem] flex-1"
 								placeholder=""
 								value={query.replace(SUBDOMAIN_REGEX, "")}
 								onChange={(e) => {
@@ -200,7 +211,7 @@ export default function Index() {
 								pattern="[a-zA-Z0-9][a-zA-Z0-9-_]*"
 							/>
 							<span className="opacity-40 font-semibold">.link.go</span>
-						</div>
+						</label>
 						<button
 							type="submit"
 							className={`px-4 grid place-items-center  transition-all ${clsx({
@@ -225,20 +236,22 @@ export default function Index() {
 							</span>
 						</button>
 					</div>
-					{status !== AvailableStatus.IDLE && (
-						<p
-							className={`mt-2 text-sm md:text-lg sm:text-md ${clsx({
-								"text-green-500": status === AvailableStatus.AVAILABLE,
-								"text-red-500": status === AvailableStatus.NOT_AVAILABLE,
-							})}`}
-						>
-							{status === AvailableStatus.NOT_AVAILABLE
-								? "This URL is already taken"
+					<p
+						className={`mt-2 text-sm md:text-lg sm:text-md ${clsx({
+							"text-green-500": status === AvailableStatus.AVAILABLE,
+							"text-red-500": status === AvailableStatus.NOT_AVAILABLE,
+							"opacity-0": status === AvailableStatus.IDLE,
+						})}`}
+					>
+						{status === AvailableStatus.NOT_AVAILABLE
+							? "This URL is already taken"
+							: AvailableStatus.IDLE
+								? "Please add some more characters"
 								: "This URL is available"}
-						</p>
-					)}
+					</p>
+
 					{/* {hasError === 1 && <div className="p-4 max-w-[70vw] text-center text-red-500 filter drop-shadow-md shadow-white text-sm">{errorMessage}</div>} */}
-				</form>
+				</Form>
 			</div>
 		</main>
 	);
