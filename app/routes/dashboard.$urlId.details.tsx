@@ -52,6 +52,7 @@ const schema = zod.object({
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 	const user = await getUser(request);
+	console.log(user, "user@dashboard.$urlId.details.tsx");
 	if (!("avatar_url" in user)) return user;
 
 	const { urlId } = params;
