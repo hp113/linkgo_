@@ -5,16 +5,19 @@ import { createSupabaseServerClient } from "~/supabase.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { supabaseClient, headers } = createSupabaseServerClient(request);
-  const { redirectParam } = await request.json();
+  const formData = await request.formData();
+  const redirectParam =
+    (Object.fromEntries(formData).redirectParam as string | undefined) ??
+    request.headers.get("Referer") ??
+    "/dashboard";
   const { data, error } = await supabaseClient.auth.signInWithOAuth({
     provider: "google",
     options: {
       redirectTo: `${
-        process.env.VERCEL_URL ?? "http://localhost:5173"
-      }/auth/callback?redirect=${encodeURI(redirectParam)}`,
+        process.env.VERCEL_URL || "http://localhost:5173"
+      }/auth/callback?redirect=${encodeURI(btoa(redirectParam))}`,
     },
   });
-
   // just for this example
   // if there is no error, we show "Please check you email" message
   if (error) {
