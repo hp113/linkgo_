@@ -211,7 +211,11 @@ export default function Products() {
 								className=" objec-cover w-20 h-20"
 								src={item.service_logo}
 							/>
-							<Form method="post" encType="multipart/form-data">
+							<Form
+								method="post"
+								encType="multipart/form-data"
+								className="flex justify-between flex-1 overflow-hidden p-2 items-center "
+							>
 								<div>
 									<h2 className="text-lg">{item.service_name}</h2>
 									<input type="hidden" name="serviceId" value={item.id} />
