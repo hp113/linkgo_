@@ -19,11 +19,12 @@ import { MapContainer, TileLayer } from "react-leaflet";
 import { RemixFormProvider, useRemixForm } from "remix-hook-form";
 import type { z } from "zod";
 import {
-	type action,
 	addLocationSchema,
+	type action,
 	type loader,
 } from "~/routes/dashboard.$urlId.details";
 import LocationMarker from "./LocationMarker.client";
+import RelocateButton from "./RelocateButton.client";
 
 export interface Geometry {
 	crs: Crs;
@@ -87,7 +88,7 @@ export default function LocationSelector() {
 						lat: location.coordinates[1],
 						lng: location.coordinates[0],
 					}}
-					zoom={13}
+					bounds={[[location.coordinates[1], location.coordinates[0]]]}
 					scrollWheelZoom={false}
 					className="h-[250px] w-[250px] relative rounded-md shadow-md z-0"
 				>
@@ -126,7 +127,12 @@ export default function LocationSelector() {
 											lat: location?.coordinates[1] ?? 10.1632,
 											lng: location?.coordinates[0] ?? 76.6413,
 										}}
-										zoom={13}
+										bounds={[
+											[
+												location?.coordinates[1] ?? 10.1632,
+												location?.coordinates[0] ?? 76.6413,
+											],
+										]}
 										scrollWheelZoom={false}
 										className="h-full w-[full] relative rounded-md shadow-md"
 									>
@@ -139,6 +145,7 @@ export default function LocationSelector() {
 											lat={location?.coordinates[1] ?? 10.1632}
 											lng={location?.coordinates[0] ?? 76.6413}
 										/>
+										<RelocateButton />
 									</MapContainer>
 								</ModalBody>
 								<ModalFooter>

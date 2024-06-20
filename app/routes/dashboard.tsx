@@ -8,7 +8,7 @@ import {
 } from "@nextui-org/react";
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
-import { Outlet, useLoaderData } from "@remix-run/react";
+import { Link, Outlet, useLoaderData, useLocation } from "@remix-run/react";
 import { getUser } from "~/utils/server";
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
@@ -22,7 +22,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 const Dashboard = () => {
 	const { user } = useLoaderData<typeof loader>();
-
+	const { pathname } = useLocation();
 	return (
 		<div className="flex w-full flex-col sm:items-center">
 			<Navbar className="bg-gray-200">
@@ -31,7 +31,14 @@ const Dashboard = () => {
 						link.go
 					</p>
 				</NavbarBrand>
-				<NavbarContent justify="end">
+				<NavbarContent justify="end" className="gap-5">
+					{pathname !== "/dashboard" && (
+						<NavbarItem>
+							<Button as={Link} to="/dashboard">
+								Dashboard
+							</Button>
+						</NavbarItem>
+					)}
 					<NavbarItem>
 						<form method="post" action="/sign-out">
 							<Button type="submit">Sign Out</Button>

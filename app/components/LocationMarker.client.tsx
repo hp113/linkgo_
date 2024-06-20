@@ -1,4 +1,4 @@
-import { LatLng, divIcon } from "leaflet";
+import { LatLng, divIcon, latLngBounds } from "leaflet";
 import { useEffect, useState } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { FaMapMarkerAlt } from "react-icons/fa";
@@ -18,7 +18,8 @@ export default function LocationMarker({
 		locationfound(e) {
 			if (isFixed) return;
 			setPosition(e.latlng);
-			map.flyTo(e.latlng, map.getZoom());
+			const markerBounds = latLngBounds([e.latlng]);
+			map.flyToBounds(markerBounds);
 		},
 	});
 
@@ -28,9 +29,7 @@ export default function LocationMarker({
 	}, [map, isFixed]);
 
 	const icon = divIcon({
-		html: renderToStaticMarkup(
-			<FaMapMarkerAlt className="w-8 h-8 shadow-xl" />,
-		),
+		html: renderToStaticMarkup(<FaMapMarkerAlt className="w-8 h-8" />),
 		iconSize: [30, 30],
 		className: "bg-transparent grid place-items-center",
 	});
