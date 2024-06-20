@@ -5,7 +5,6 @@ function LocationForm({
 	position,
 }: { position: { lat: number; lng: number } }) {
 	const { reset, getValues, formState } = useRemixFormContext();
-	console.log(getValues());
 	useEffect(() => {
 		reset(
 			{

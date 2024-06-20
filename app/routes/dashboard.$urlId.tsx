@@ -19,6 +19,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 	if (!("avatar_url" in user)) return user;
 	const { supabaseClient } = createSupabaseServerClient(request);
 	const { urlId } = params;
+
 	if (!urlId) return redirectWithError("/dashboard", "URL not found");
 
 	const { data, error: urlError } = await supabaseClient
@@ -26,15 +27,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 		.select()
 		.eq("id", urlId)
 		.single();
-	if (urlError || !data)
+	if (urlError || !data) {
+		console.error("Error fetching URL details:", urlError);
 		return redirectWithError("/dashboard", "URL not found");
+	}
 	return json({ url: data });
 };
 
 export default function LandingPage() {
 	const { url } = useLoaderData<typeof loader>();
 	const { pathname } = useLocation();
-
 	return (
 		<div className="flex flex-col">
 			<p className="sm:text-lg"> Your link.go URL</p>

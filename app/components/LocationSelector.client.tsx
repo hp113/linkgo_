@@ -39,12 +39,13 @@ export interface Properties {
 }
 
 type FormData = z.infer<typeof addLocationSchema>;
-const resolver = zodResolver(addLocationSchema);
 
 export default function LocationSelector() {
 	const { isOpen, onOpen, onClose } = useDisclosure();
 	const { store } = useLoaderData<typeof loader>();
 	const storeDetails = store?.url_details;
+	const resolver = zodResolver(addLocationSchema);
+
 	const location = storeDetails?.location as Geometry | null;
 	const methods = useRemixForm<FormData>({
 		mode: "onSubmit",

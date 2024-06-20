@@ -22,6 +22,7 @@
 		"framer-motion": "^11.2.2",
 		"isbot": "^4.1.0",
 		"leaflet": "^1.9.4",
+		"leaflet-defaulticon-compatibility": "^0.1.2",
 		"react": "^18.2.0",
 		"react-dom": "^18.2.0",
 		"react-hook-form": "^7.51.5",

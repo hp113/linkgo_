@@ -13,22 +13,14 @@ import {
 	type ActionFunctionArgs,
 	type LoaderFunctionArgs,
 	json,
-	redirect,
 	unstable_createMemoryUploadHandler,
 	unstable_parseMultipartFormData,
 } from "@remix-run/node";
-import {
-	Form,
-	isRouteErrorResponse,
-	useLoaderData,
-	useNavigation,
-	useRouteError,
-} from "@remix-run/react";
+import { Form, useLoaderData, useNavigation } from "@remix-run/react";
 import { Controller } from "react-hook-form";
 import { useRemixForm, validateFormData } from "remix-hook-form";
 import { jsonWithError, jsonWithSuccess } from "remix-toast";
 import { ClientOnly } from "remix-utils/client-only";
-import { toast } from "sonner";
 import zod from "zod";
 import LocationSelector from "~/components/LocationSelector.client";
 import { createSupabaseServerClient } from "~/supabase.server";
@@ -52,7 +44,6 @@ const schema = zod.object({
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 	const user = await getUser(request);
-	console.log(user, "user@dashboard.$urlId.details.tsx");
 	if (!("avatar_url" in user)) return user;
 
 	const { urlId } = params;
@@ -372,13 +363,4 @@ export default function Details() {
 			</Card>
 		</div>
 	);
-}
-
-export function ErrorBoundary() {
-	const error = useRouteError();
-	if (isRouteErrorResponse(error)) {
-		toast.error(error.data);
-		return redirect("/landing");
-	}
-	return redirect("/landing");
 }

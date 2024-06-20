@@ -17,7 +17,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 		return json({ user: user });
 	}
 	// This means the session does not exist now and we should redirect to the login page
-	console.log("User not found");
 	return user;
 };
 
